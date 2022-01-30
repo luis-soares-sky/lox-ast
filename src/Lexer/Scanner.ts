@@ -1,11 +1,13 @@
-import { error } from "./Lox";
+import { reportError } from "../Lox";
 import { TokenKeywordMap, TokenType, Token } from "./Token";
 
 export class Scanner {
     private source: string;
     private readonly tokens: Token[] = [];
+
     private start = 0;
     private current = 0;
+    private column = 0;
     private line = 1;
 
     public constructor(source: string) {
@@ -13,13 +15,16 @@ export class Scanner {
     }
 
     public scanTokens(): Token[] {
+        this.column = 1; // Need to start at 1, otherwise the first line will always be off by one (due to all lines having "\n").
+
         while (!this.isAtEnd()) {
             // We are at the beginning of the next lexeme.
+            this.column += (this.current - this.start);
             this.start = this.current;
             this.scanToken();
         }
 
-        this.tokens.push(new Token(TokenType.EOF, "", <never>null, this.line));
+        this.tokens.push(new Token(TokenType.EOF, "", <never>null, this.line, this.column));
         return this.tokens;
     }
 
@@ -31,6 +36,8 @@ export class Scanner {
             case "\t":
                 // Ignore whitespace.
                 break;
+
+            case "\n": this.incrementLine(); break;
 
             case "(": this.addToken(TokenType.LEFT_PAREN); break;
             case ")": this.addToken(TokenType.RIGHT_PAREN); break;
@@ -49,28 +56,84 @@ export class Scanner {
             case ">": this.addToken(this.match("=") ? TokenType.GREATER_EQUAL : TokenType.GREATER); break;
 
             case "/":
-                if (this.match("/")) this.inlineComment();
-                else if (this.match("*")) this.blockComment();
+                if (this.match("/")) this.scanInlineComment();
+                else if (this.match("*")) this.scanBlockComment();
                 else this.addToken(TokenType.SLASH);
                 break;
 
-            case "\n":
-                this.line++;
-                break;
-
-            case "\"": this.string(); break;
+            case "\"": this.scanString(); break;
 
             default:
-                if (this.isDigit(c)) this.number();
-                else if (this.isAlpha(c)) this.identifier();
-                else error(this.line, `Unexpected character: ${c}`);
+                if (this.isDigit(c)) this.scanNumber();
+                else if (this.isAlpha(c)) this.scanIdentifier();
+                else reportError(this.line, this.column, `Unexpected character: ${c}`);
                 break;
         }
     }
 
+    private scanString() {
+        while (this.peek() != "\"" && !this.isAtEnd()) {
+            if (this.peek() == "\n") this.incrementLine();
+            this.advance();
+        }
+
+        if (this.isAtEnd()) {
+            reportError(this.line, this.column, "Unterminated string");
+            return;
+        }
+
+        this.advance(); // The closing quote.
+
+        const value = this.source.substring(this.start + 1, this.current - 1);
+        this.addToken(TokenType.STRING, value);
+    }
+
+    private scanNumber() {
+        while (this.isDigit(this.peek())) this.advance();
+
+        // Look for a fractional part.
+        if (this.peek() == "." && this.isDigit(this.peekNext())) {
+            this.advance(); // Consume the ".".
+
+            while (this.isDigit(this.peek())) this.advance();
+        }
+
+        this.addToken(TokenType.NUMBER, parseFloat(this.source.substring(this.start, this.current)));
+    }
+
+    private scanIdentifier() {
+        while (this.isAlphaNumeric(this.peek())) this.advance();
+
+        const text = this.source.substring(this.start, this.current);
+        let type = TokenKeywordMap[text.toLowerCase()];
+        if (type == null) type = TokenType.IDENTIFIER;
+        this.addToken(type);
+    }
+
+    private scanInlineComment() {
+        // An inline comment goes until the end of the line.
+        while (this.peek() != "\n" && !this.isAtEnd()) this.advance();
+
+        this.addToken(TokenType.INLINE_COMMENT, this.source.substring(this.start, this.current));
+    }
+
+    private scanBlockComment() {
+        // A block comment goes until a matching "*/" is found.
+        while (!this.isAtEnd()) {
+            if (this.peek() == "*" && this.peekNext() == "/") {
+                this.advance();
+                this.advance();
+                break;
+            }
+            this.advance();
+        }
+
+        this.addToken(TokenType.BLOCK_COMMENT, this.source.substring(this.start, this.current));
+    }
+
     private addToken(type: TokenType, literal: unknown = null) {
         const text = this.source.substring(this.start, this.current);
-        this.tokens.push(new Token(type, text, literal, this.line));
+        this.tokens.push(new Token(type, text, literal, this.line, this.column));
     }
 
     private advance(): string {
@@ -95,73 +158,13 @@ export class Scanner {
         return this.source.charAt(this.current + 1);
     }
 
-    private string() {
-        while (this.peek() != "\"" && !this.isAtEnd()) {
-            if (this.peek() == "\n") this.line++;
-            this.advance();
-        }
-
-        if (this.isAtEnd()) {
-            error(this.line, "Unterminated string");
-            return;
-        }
-
-        this.advance(); // The closing ".
-
-        const value = this.source.substring(this.start + 1, this.current - 1);
-        this.addToken(TokenType.STRING, value);
-    }
-
-    private number() {
-        while (this.isDigit(this.peek())) this.advance();
-
-        // Look for a fractional part.
-        if (this.peek() == "." && this.isDigit(this.peekNext())) {
-            this.advance(); // Consume the ".".
-
-            while (this.isDigit(this.peek())) this.advance();
-        }
-
-        this.addToken(TokenType.NUMBER, parseFloat(this.source.substring(this.start, this.current)));
-    }
-
-    private identifier() {
-        while (this.isAlphaNumeric(this.peek())) this.advance();
-
-        const text = this.source.substring(this.start, this.current);
-        let type = TokenKeywordMap[text.toLowerCase()];
-        if (type == null) type = TokenType.IDENTIFIER;
-        this.addToken(type);
-    }
-
-    private inlineComment() {
-        // An inline comment goes until the end of the line.
-        while (this.peek() != "\n" && !this.isAtEnd()) this.advance();
-
-        this.addToken(TokenType.INLINE_COMMENT, this.source.substring(this.start, this.current));
-    }
-
-    private blockComment() {
-        // A block comment goes until a matching "*/" is found.
-        while (!this.isAtEnd()) {
-            if (this.peek() == "*" && this.peekNext() == "/") {
-                this.advance();
-                this.advance();
-                break;
-            }
-            this.advance();
-        }
-
-        this.addToken(TokenType.BLOCK_COMMENT, this.source.substring(this.start, this.current));
+    private incrementLine() {
+        this.line++;
+        this.column = 0;
     }
 
     private isAtEnd(): boolean {
         return this.current >= this.source.length;
-    }
-
-    private isDigit(c: string): boolean {
-        const code = c.charCodeAt(0);
-        return code >= 48 && code <= 57; // 0-9
     }
 
     private isAlpha(c: string): boolean {
@@ -173,5 +176,10 @@ export class Scanner {
 
     private isAlphaNumeric(c: string): boolean {
         return this.isAlpha(c) || this.isDigit(c);
+    }
+
+    private isDigit(c: string): boolean {
+        const code = c.charCodeAt(0);
+        return code >= 48 && code <= 57; // 0-9
     }
 }

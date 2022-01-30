@@ -44,11 +44,13 @@ export class Token {
     public readonly lexeme: string;
     public readonly literal: unknown;
     public readonly line: number;
+    public readonly column: number;
 
-    public constructor(type: TokenType, lexeme: string, literal: unknown, line: number) {
+    public constructor(type: TokenType, lexeme: string, literal: unknown, line: number, column: number) {
         this.type = type;
         this.lexeme = lexeme;
         this.literal = literal;
         this.line = line;
+        this.column = column;
     }
 }

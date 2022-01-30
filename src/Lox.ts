@@ -1,22 +1,18 @@
-import { readFileSync } from "fs";
+import { readFile } from "fs/promises";
 import { resolve } from "path";
 import { createInterface, Interface } from "readline";
 
-import { Scanner } from "./Scanner";
-import { Token } from "./Token";
+import { Scanner } from "./Lexer/Scanner";
+import { Token } from "./Lexer/Token";
 
 let hadError = false;
 
-export function error(line: number, message: string) {
-    report(line, "", message);
-}
-
-export function report(line: number, where: string, message: string) {
-    console.error(`[line ${line}] Error${where}: ${message}`);
+export function reportError(line: number, column: number, message: string) {
+    console.error(`[${line}:${column}] Error: ${message}`);
     hadError = true;
 }
 
-export function run(contents: string) {
+export function runContents(contents: string) {
     const scanner: Scanner = new Scanner(contents);
     const tokens: Token[] = scanner.scanTokens();
 
@@ -25,8 +21,10 @@ export function run(contents: string) {
     });
 }
 
-export function runFile(path: string) {
-    run(readFileSync(resolve(path)).toString());
+export async function runFile(path: string) {
+    const buffer = await readFile(resolve(path));
+    runContents(buffer.toString());
+
     if (hadError) process.exit(65);
 }
 
@@ -38,17 +36,17 @@ export async function runPrompt() {
 
     // eslint-disable-next-line no-constant-condition
     while (true) {
-        const line = await requestPrompt(rl);
-        if (line == null || line == "q") {
+        const line = await requestCommandLinePrompt(rl);
+        if (line == null || ["q", "quit", "exit"].includes(line)) {
             rl.close();
             break;
         }
-        run(line);
+        runContents(line);
         hadError = false;
     }
 }
 
-function requestPrompt(rl: Interface): Promise<string | null> {
+function requestCommandLinePrompt(rl: Interface): Promise<string | null> {
     return new Promise((resolve) => {
         rl.question("\ntslox> ", (line) => {
             line = line.trim();
