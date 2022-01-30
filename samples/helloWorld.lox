@@ -1,0 +1,5 @@
+fun test(name) {
+    print "hello " + name + "!"
+}
+
+test("World")
