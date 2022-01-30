@@ -2,7 +2,7 @@
 
 Typescript implementation of the `lox` programming language.
 
-What is lox? The answer: http://craftinginterpreters.com/
+What is lox? https://craftinginterpreters.com/the-lox-language.html
 
 ## Motivation
 
