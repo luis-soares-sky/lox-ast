@@ -4,21 +4,28 @@ import { createInterface, Interface } from "readline";
 
 import { Scanner } from "./Lexer/Scanner";
 import { Token } from "./Lexer/Token";
+import { Parser } from "./Parser/Parser";
+import { Expr } from "./Ast/Expr";
+import { ExprAstPrinter } from "./Ast/AstPrinter";
 
 let hadError = false;
 
-export function reportError(line: number, column: number, message: string) {
-    console.error(`[${line}:${column}] Error: ${message}`);
+export function reportError(line: number, column: number, where: string, message: string) {
+    console.error(`[${line}:${column}] Error${where}: ${message}`);
     hadError = true;
 }
 
 export function runContents(contents: string) {
     const scanner: Scanner = new Scanner(contents);
     const tokens: Token[] = scanner.scanTokens();
+    const parser: Parser = new Parser(tokens);
+    const expression: Expr | null = parser.parse();
 
-    tokens.forEach((element) => {
-        console.log(element);
-    });
+    if (hadError) return;
+
+    if (expression != null) {
+        console.log(new ExprAstPrinter().print(expression));
+    }
 }
 
 export async function runFile(path: string) {
