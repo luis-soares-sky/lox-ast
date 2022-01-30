@@ -27,3 +27,18 @@ npm start
 # Or parse an entire file.
 npm start "samples/helloWorld.lox"
 ```
+
+If you want the interpreter to be available as a command-line app:
+
+```bash
+# Generate the source files.
+npm install
+npm run build
+
+# Then link this repo.
+npm link
+
+# Then you can use the command.
+tslox
+tslox myFile.lox
+```
