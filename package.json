@@ -5,6 +5,7 @@
     "main": "./build/index.js",
     "license": "ISC",
     "scripts": {
+        "ast": "ts-node ./tool/generateAst.ts",
         "build": "rimraf ./build && tsc",
         "lint": "eslint ./src",
         "start": "ts-node ./src/index.ts"
