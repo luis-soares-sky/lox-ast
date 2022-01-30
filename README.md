@@ -25,7 +25,7 @@ Then run the interpreter:
 npm start
 
 # Or parse an entire file.
-npm start "samples/helloWorld.lox"
+npm start samples/helloWorld.lox
 ```
 
 If you want the interpreter to be available as a command-line app:
