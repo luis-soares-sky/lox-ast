@@ -1,6 +1,6 @@
+import * as Expr from "../Ast/Expr";
+import * as Stmt from "../Ast/Stmt";
 import { Token, TokenType } from "../Lexer/Token";
-import { Binary, Expr, Grouping, Literal, Unary } from "../Ast/Expr";
-import { Expression, Print, Stmt } from "../Ast/Stmt";
 import { ParseError, reportError } from "../Lox";
 
 export class Parser {
@@ -11,10 +11,13 @@ export class Parser {
         this.tokens = tokens;
     }
 
-    public parse(): Stmt[] {
-        const statements: Stmt[] = [];
+    public parse(): Stmt.Stmt[] {
+        const statements: Stmt.Stmt[] = [];
         while (!this.isAtEnd()) {
-            statements.push(this.statement());
+            const result = this.declaration();
+            if (result != null) {
+                statements.push(result);
+            }
         }
         return statements;
     }
@@ -87,100 +90,146 @@ export class Parser {
 
     // http://craftinginterpreters.com/statements-and-state.html#parsing-statements
 
-    private statement(): Stmt {
+    private statement(): Stmt.Stmt {
         if (this.match(TokenType.PRINT)) return this.printStatement();
         return this.expressionStatement();
     }
 
-    private printStatement(): Stmt {
+    private printStatement(): Stmt.Stmt {
         const value = this.expression();
         this.consume(TokenType.SEMICOLON, "Expected ';' after value");
-        return new Print(value);
+        return new Stmt.Print(value);
     }
 
-    private expressionStatement(): Stmt {
+    private expressionStatement(): Stmt.Stmt {
         const expr = this.expression();
         this.consume(TokenType.SEMICOLON, "Expected ';' after value");
-        return new Expression(expr);
+        return new Stmt.Expression(expr);
+    }
+
+    private declaration(): Stmt.Stmt | null {
+        try {
+            if (this.match(TokenType.VAR)) return this.varDeclaration();
+            return this.statement();
+        }
+        catch (e) {
+            if (e instanceof ParseError) {
+                this.synchronize();
+                return null;
+            }
+            throw e;
+        }
+    }
+
+    private varDeclaration(): Stmt.Stmt {
+        const name: Token = this.consume(TokenType.IDENTIFIER, "Expected variable name");
+        const initializer = this.match(TokenType.EQUAL)
+            ? this.expression()
+            : undefined;
+
+        this.consume(TokenType.SEMICOLON, "Expected ';' after variable declaration");
+        return new Stmt.Var(name, initializer);
     }
 
     // http://craftinginterpreters.com/parsing-expressions.html
 
-    private expression(): Expr {
-        return this.equality();
+    private assignment(): Expr.Expr {
+        const expr = this.equality();
+
+        if (this.match(TokenType.EQUAL)) {
+            const equals = this.previous();
+            const value = this.assignment();
+
+            if (expr instanceof Expr.Variable) {
+                const name = expr.name;
+                return new Expr.Assign(name, value);
+            }
+
+            this.error(equals, "Invalid assignment target");
+        }
+
+        return expr;
     }
 
-    private equality(): Expr {
+    private expression(): Expr.Expr {
+        return this.assignment();
+    }
+
+    private equality(): Expr.Expr {
         let expr = this.comparison();
 
         while (this.match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL)) {
             const operator = this.previous();
             const right = this.comparison();
-            expr = new Binary(expr, operator, right);
+            expr = new Expr.Binary(expr, operator, right);
         }
 
         return expr;
     }
 
-    private comparison(): Expr {
+    private comparison(): Expr.Expr {
         let expr = this.term();
 
         while (this.match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL)) {
             const operator = this.previous();
             const right = this.term();
-            expr = new Binary(expr, operator, right);
+            expr = new Expr.Binary(expr, operator, right);
         }
 
         return expr;
     }
 
-    private term(): Expr {
+    private term(): Expr.Expr {
         let expr = this.factor();
 
         while (this.match(TokenType.MINUS, TokenType.PLUS)) {
             const operator = this.previous();
             const right = this.factor();
-            expr = new Binary(expr, operator, right);
+            expr = new Expr.Binary(expr, operator, right);
         }
 
         return expr;
     }
 
-    private factor(): Expr {
+    private factor(): Expr.Expr {
         let expr = this.unary();
 
         while (this.match(TokenType.SLASH, TokenType.STAR)) {
             const operator = this.previous();
             const right = this.unary();
-            expr = new Binary(expr, operator, right);
+            expr = new Expr.Binary(expr, operator, right);
         }
 
         return expr;
     }
 
-    private unary(): Expr {
+    private unary(): Expr.Expr {
         if (this.match(TokenType.BANG, TokenType.MINUS)) {
             const operator = this.previous();
             const right = this.unary();
-            return new Unary(operator, right);
+            return new Expr.Unary(operator, right);
         }
 
         return this.primary();
     }
 
-    private primary(): Expr {
-        if (this.match(TokenType.FALSE)) return new Literal(false);
-        if (this.match(TokenType.TRUE)) return new Literal(true);
-        if (this.match(TokenType.NIL)) return new Literal(null);
+    private primary(): Expr.Expr {
+        if (this.match(TokenType.FALSE)) return new Expr.Literal(false);
+        if (this.match(TokenType.TRUE)) return new Expr.Literal(true);
+        if (this.match(TokenType.NIL)) return new Expr.Literal(null);
 
         if (this.match(TokenType.NUMBER, TokenType.STRING)) {
-            return new Literal(this.previous().literal);
+            return new Expr.Literal(this.previous().literal);
+        }
+
+        if (this.match(TokenType.IDENTIFIER)) {
+            return new Expr.Variable(this.previous());
         }
 
         if (this.match(TokenType.LEFT_PAREN)) {
             const expr = this.expression();
             this.consume(TokenType.RIGHT_PAREN, "Expected ')' after expression");
-            return new Grouping(expr);
+            return new Expr.Grouping(expr);
         }
 
         throw this.error(this.peek(), "Expected expression");

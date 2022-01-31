@@ -1,10 +1,13 @@
-import { Binary, Expr, Grouping, Literal, Unary, Visitor as ExprVisitor } from "../Ast/Expr";
-import { Expression, Print, Stmt, Visitor as StmtVisitor } from "../Ast/Stmt";
+import { Environment } from "./Environment";
+import * as Expr from "../Ast/Expr";
+import * as Stmt from "../Ast/Stmt";
 import { Token, TokenType } from "../Lexer/Token";
 import { reportRuntimeError, RuntimeError } from "../Lox";
 
-export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
-    public interpret(statements: Stmt[]) {
+export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
+    private environment = new Environment();
+
+    public interpret(statements: Stmt.Stmt[]) {
         try {
             statements.forEach((statement) => {
                 this.execute(statement);
@@ -19,7 +22,13 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
         }
     }
 
-    public visitBinaryExpr(expr: Binary): unknown {
+    public visitAssignExpr(expr: Expr.Assign): unknown {
+        const value = this.evaluate(expr.value);
+        this.environment.assign(expr.name, value);
+        return value;
+    }
+
+    public visitBinaryExpr(expr: Expr.Binary): unknown {
         const left = this.evaluate(expr.left);
         const right = this.evaluate(expr.right);
 
@@ -60,15 +69,15 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
         return null;
     }
 
-    public visitGroupingExpr(expr: Grouping): unknown {
+    public visitGroupingExpr(expr: Expr.Grouping): unknown {
         return this.evaluate(expr.expression);
     }
 
-    public visitLiteralExpr(expr: Literal): unknown {
+    public visitLiteralExpr(expr: Expr.Literal): unknown {
         return expr.value;
     }
 
-    public visitUnaryExpr(expr: Unary): unknown {
+    public visitUnaryExpr(expr: Expr.Unary): unknown {
         const right = this.evaluate(expr.right);
 
         switch (expr.operator.type) {
@@ -83,24 +92,37 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
         return null;
     }
 
-    public visitExpressionStmt(stmt: Expression) {
+    public visitVariableExpr(expr: Expr.Variable): unknown {
+        return this.environment.get(expr.name);
+    }
+
+    public visitExpressionStmt(stmt: Stmt.Expression) {
         this.evaluate(stmt.expression);
     }
 
-    public visitPrintStmt(stmt: Print) {
+    public visitPrintStmt(stmt: Stmt.Print) {
         const value = this.evaluate(stmt.expression);
         console.log(this.stringify(value));
     }
 
+    public visitVarStmt(stmt: Stmt.Var): void {
+        let value = null;
+        if (stmt.initializer != null) {
+            value = this.evaluate(stmt.initializer);
+        }
+
+        this.environment.define(stmt.name.lexeme, value);
+    }
+
     // http://craftinginterpreters.com/statements-and-state.html#statements
 
-    private execute(stmt: Stmt) {
+    private execute(stmt: Stmt.Stmt) {
         stmt.accept(this);
     }
 
     // http://craftinginterpreters.com/evaluating-expressions.html
 
-    private evaluate(expr: Expr): unknown {
+    private evaluate(expr: Expr.Expr): unknown {
         return expr.accept(this);
     }
 
