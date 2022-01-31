@@ -77,6 +77,19 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
         return expr.value;
     }
 
+    public visitLogicalExpr(expr: Expr.Logical): unknown {
+        const left = this.evaluate(expr.left);
+
+        if (expr.operator.type == TokenType.OR) {
+            if (this.isTruthy(left)) return left;
+        }
+        else {
+            if (!this.isTruthy(left)) return left;
+        }
+
+        return this.evaluate(expr.right);
+    }
+
     public visitUnaryExpr(expr: Expr.Unary): unknown {
         const right = this.evaluate(expr.right);
 
@@ -102,6 +115,15 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
 
     public visitExpressionStmt(stmt: Stmt.Expression) {
         this.evaluate(stmt.expression);
+    }
+
+    public visitIfStmt(stmt: Stmt.If) {
+        if (this.isTruthy(this.evaluate(stmt.condition))) {
+            this.execute(stmt.thenBranch);
+        }
+        else if (stmt.elseBranch != null) {
+            this.execute(stmt.elseBranch);
+        }
     }
 
     public visitPrintStmt(stmt: Stmt.Print) {

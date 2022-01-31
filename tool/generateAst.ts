@@ -97,6 +97,7 @@ defineAst(args[0], "Expr", [
     "Binary   : Expr left, Token operator, Expr right",
     "Grouping : Expr expression",
     "Literal  : unknown value",
+    "Logical  : Expr left, Token operator, Expr right",
     "Unary    : Token operator, Expr right",
     "Variable : Token name"
 ], [
@@ -106,6 +107,7 @@ defineAst(args[0], "Expr", [
 defineAst(args[0], "Stmt", [
     "Block      : Stmt[] statements",
     "Expression : Expr expression",
+    "If         : Expr condition, Stmt thenBranch, Stmt elseBranch?",
     "Print      : Expr expression",
     "Var        : Token name, Expr initializer?"
 ], [

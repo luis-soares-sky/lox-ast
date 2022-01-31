@@ -7,6 +7,7 @@ import { Expr } from "./Expr";
 export interface Visitor<T> {
     visitBlockStmt(stmt: Block): T;
     visitExpressionStmt(stmt: Expression): T;
+    visitIfStmt(stmt: If): T;
     visitPrintStmt(stmt: Print): T;
     visitVarStmt(stmt: Var): T;
 }
@@ -32,6 +33,18 @@ export class Expression implements Stmt {
 
     public accept<T>(visitor: Visitor<T>): T {
         return visitor.visitExpressionStmt(this);
+    }
+}
+
+export class If implements Stmt {
+    public constructor(
+        public readonly condition: Expr,
+        public readonly thenBranch: Stmt,
+        public readonly elseBranch?: Stmt,
+    ) { }
+
+    public accept<T>(visitor: Visitor<T>): T {
+        return visitor.visitIfStmt(this);
     }
 }
 
