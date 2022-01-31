@@ -39,8 +39,8 @@ export function reportRuntimeError(error: RuntimeError) {
     hadRuntimeError = true;
 }
 
-export function runContents(contents: string) {
-    const scanner = new Scanner(contents);
+export function run(source: string) {
+    const scanner = new Scanner(source);
     const tokens = scanner.scanTokens();
     const parser = new Parser(tokens);
     const statements = parser.parse();
@@ -52,7 +52,7 @@ export function runContents(contents: string) {
 
 export async function runFile(path: string) {
     const buffer = await readFile(resolve(path));
-    runContents(buffer.toString());
+    run(buffer.toString());
 
     if (hadError) return process.exit(65);
     if (hadRuntimeError) return process.exit(70);
@@ -71,7 +71,7 @@ export async function runPrompt() {
             rl.close();
             break;
         }
-        runContents(line);
+        run(line);
         console.log(); // Blank line after printing result.
         hadError = false;
     }
