@@ -1,5 +1,6 @@
 import { Token, TokenType } from "../Lexer/Token";
 import { Binary, Expr, Grouping, Literal, Unary } from "../Ast/Expr";
+import { Expression, Print, Stmt } from "../Ast/Stmt";
 import { ParseError, reportError } from "../Lox";
 
 export class Parser {
@@ -10,16 +11,12 @@ export class Parser {
         this.tokens = tokens;
     }
 
-    public parse(): Expr | null {
-        try {
-            return this.expression();
+    public parse(): Stmt[] {
+        const statements: Stmt[] = [];
+        while (!this.isAtEnd()) {
+            statements.push(this.statement());
         }
-        catch (e) {
-            if (e instanceof ParseError) {
-                return null;
-            }
-            throw e;
-        }
+        return statements;
     }
 
     private match(...types: TokenType[]): boolean {
@@ -86,6 +83,25 @@ export class Parser {
 
             this.advance();
         }
+    }
+
+    // http://craftinginterpreters.com/statements-and-state.html#parsing-statements
+
+    private statement(): Stmt {
+        if (this.match(TokenType.PRINT)) return this.printStatement();
+        return this.expressionStatement();
+    }
+
+    private printStatement(): Stmt {
+        const value = this.expression();
+        this.consume(TokenType.SEMICOLON, "Expected ';' after value");
+        return new Print(value);
+    }
+
+    private expressionStatement(): Stmt {
+        const expr = this.expression();
+        this.consume(TokenType.SEMICOLON, "Expected ';' after value");
+        return new Expression(expr);
     }
 
     // http://craftinginterpreters.com/parsing-expressions.html

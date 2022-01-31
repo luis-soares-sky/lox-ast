@@ -1,12 +1,14 @@
-import { Binary, Expr, Grouping, Literal, Unary, Visitor } from "../Ast/Expr";
+import { Binary, Expr, Grouping, Literal, Unary, Visitor as ExprVisitor } from "../Ast/Expr";
+import { Expression, Print, Stmt, Visitor as StmtVisitor } from "../Ast/Stmt";
 import { Token, TokenType } from "../Lexer/Token";
 import { reportRuntimeError, RuntimeError } from "../Lox";
 
-export class Interpreter implements Visitor<unknown> {
-    public interpret(expression: Expr) {
+export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
+    public interpret(statements: Stmt[]) {
         try {
-            const value = this.evaluate(expression);
-            console.log(this.stringify(value));
+            statements.forEach((statement) => {
+                this.execute(statement);
+            });
         }
         catch (e) {
             if (e instanceof RuntimeError) {
@@ -80,6 +82,23 @@ export class Interpreter implements Visitor<unknown> {
         // Unreachable.
         return null;
     }
+
+    public visitExpressionStmt(stmt: Expression) {
+        this.evaluate(stmt.expression);
+    }
+
+    public visitPrintStmt(stmt: Print) {
+        const value = this.evaluate(stmt.expression);
+        console.log(this.stringify(value));
+    }
+
+    // http://craftinginterpreters.com/statements-and-state.html#statements
+
+    private execute(stmt: Stmt) {
+        stmt.accept(this);
+    }
+
+    // http://craftinginterpreters.com/evaluating-expressions.html
 
     private evaluate(expr: Expr): unknown {
         return expr.accept(this);

@@ -6,7 +6,6 @@ import { Scanner } from "./Lexer/Scanner";
 import { Token } from "./Lexer/Token";
 import { Parser } from "./Parser/Parser";
 import { Interpreter } from "./Parser/Interpreter";
-import { Expr } from "./Ast/Expr";
 
 const interpreter = new Interpreter();
 let hadError = false;
@@ -41,15 +40,14 @@ export function reportRuntimeError(error: RuntimeError) {
 }
 
 export function runContents(contents: string) {
-    const scanner: Scanner = new Scanner(contents);
-    const tokens: Token[] = scanner.scanTokens();
-    const parser: Parser = new Parser(tokens);
-    const expression: Expr | null = parser.parse();
+    const scanner = new Scanner(contents);
+    const tokens = scanner.scanTokens();
+    const parser = new Parser(tokens);
+    const statements = parser.parse();
 
-    if (expression == null) return; // Stop if the expression is null.
     if (hadError) return; // Stop if there was a syntax error.
 
-    interpreter.interpret(expression);
+    interpreter.interpret(statements);
 }
 
 export async function runFile(path: string) {
