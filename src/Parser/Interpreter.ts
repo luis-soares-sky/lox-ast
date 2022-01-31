@@ -109,15 +109,15 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
         return this.environment.get(expr.name);
     }
 
-    public visitBlockStmt(stmt: Stmt.Block) {
+    public visitBlockStmt(stmt: Stmt.Block): void {
         this.executeBlock(stmt.statements, new Environment(this.environment));
     }
 
-    public visitExpressionStmt(stmt: Stmt.Expression) {
+    public visitExpressionStmt(stmt: Stmt.Expression): void {
         this.evaluate(stmt.expression);
     }
 
-    public visitIfStmt(stmt: Stmt.If) {
+    public visitIfStmt(stmt: Stmt.If): void {
         if (this.isTruthy(this.evaluate(stmt.condition))) {
             this.execute(stmt.thenBranch);
         }
@@ -126,18 +126,24 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
         }
     }
 
-    public visitPrintStmt(stmt: Stmt.Print) {
+    public visitPrintStmt(stmt: Stmt.Print): void {
         const value = this.evaluate(stmt.expression);
         console.log(this.stringify(value));
     }
 
-    public visitVarStmt(stmt: Stmt.Var) {
+    public visitVarStmt(stmt: Stmt.Var): void {
         let value = null;
         if (stmt.initializer != null) {
             value = this.evaluate(stmt.initializer);
         }
 
         this.environment.define(stmt.name.lexeme, value);
+    }
+
+    public visitWhileStmt(stmt: Stmt.While): void {
+        while (this.isTruthy(this.evaluate(stmt.condition))) {
+            this.execute(stmt.body);
+        }
     }
 
     // http://craftinginterpreters.com/statements-and-state.html#statements
