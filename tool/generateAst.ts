@@ -104,6 +104,7 @@ defineAst(args[0], "Expr", [
 ]);
 
 defineAst(args[0], "Stmt", [
+    "Block      : Stmt[] statements",
     "Expression : Expr expression",
     "Print      : Expr expression",
     "Var        : Token name, Expr initializer?"

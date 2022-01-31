@@ -5,6 +5,7 @@ import { Token } from "../Lexer/Token";
 import { Expr } from "./Expr";
 
 export interface Visitor<T> {
+    visitBlockStmt(stmt: Block): T;
     visitExpressionStmt(stmt: Expression): T;
     visitPrintStmt(stmt: Print): T;
     visitVarStmt(stmt: Var): T;
@@ -12,6 +13,16 @@ export interface Visitor<T> {
 
 export interface Stmt {
     accept<T>(visitor: Visitor<T>): T;
+}
+
+export class Block implements Stmt {
+    public constructor(
+        public readonly statements: Stmt[],
+    ) { }
+
+    public accept<T>(visitor: Visitor<T>): T {
+        return visitor.visitBlockStmt(this);
+    }
 }
 
 export class Expression implements Stmt {

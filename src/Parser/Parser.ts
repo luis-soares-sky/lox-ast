@@ -14,9 +14,15 @@ export class Parser {
     public parse(): Stmt.Stmt[] {
         const statements: Stmt.Stmt[] = [];
         while (!this.isAtEnd()) {
-            const result = this.declaration();
-            if (result != null) {
-                statements.push(result);
+            try {
+                statements.push(this.declaration());
+            }
+            catch (e) {
+                if (e instanceof ParseError) {
+                    this.synchronize();
+                    continue;
+                }
+                throw e;
             }
         }
         return statements;
@@ -89,9 +95,11 @@ export class Parser {
     }
 
     // http://craftinginterpreters.com/statements-and-state.html#parsing-statements
+    // http://craftinginterpreters.com/statements-and-state.html#scope
 
     private statement(): Stmt.Stmt {
         if (this.match(TokenType.PRINT)) return this.printStatement();
+        if (this.match(TokenType.LEFT_BRACE)) return new Stmt.Block(this.blockStatement());
         return this.expressionStatement();
     }
 
@@ -107,18 +115,23 @@ export class Parser {
         return new Stmt.Expression(expr);
     }
 
-    private declaration(): Stmt.Stmt | null {
-        try {
-            if (this.match(TokenType.VAR)) return this.varDeclaration();
-            return this.statement();
+    private blockStatement(): Stmt.Stmt[] {
+        const statements: Stmt.Stmt[] = [];
+
+        while (!this.check(TokenType.RIGHT_BRACE) && !this.isAtEnd()) {
+            statements.push(this.declaration());
         }
-        catch (e) {
-            if (e instanceof ParseError) {
-                this.synchronize();
-                return null;
-            }
-            throw e;
+
+        this.consume(TokenType.RIGHT_BRACE, "Expected '}' after block");
+        return statements;
+    }
+
+    private declaration(): Stmt.Stmt {
+        if (this.match(TokenType.VAR)) {
+            return this.varDeclaration();
         }
+
+        return this.statement();
     }
 
     private varDeclaration(): Stmt.Stmt {
@@ -132,6 +145,10 @@ export class Parser {
     }
 
     // http://craftinginterpreters.com/parsing-expressions.html
+
+    private expression(): Expr.Expr {
+        return this.assignment();
+    }
 
     private assignment(): Expr.Expr {
         const expr = this.equality();
@@ -149,10 +166,6 @@ export class Parser {
         }
 
         return expr;
-    }
-
-    private expression(): Expr.Expr {
-        return this.assignment();
     }
 
     private equality(): Expr.Expr {

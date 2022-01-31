@@ -96,6 +96,10 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
         return this.environment.get(expr.name);
     }
 
+    public visitBlockStmt(stmt: Stmt.Block) {
+        this.executeBlock(stmt.statements, new Environment(this.environment));
+    }
+
     public visitExpressionStmt(stmt: Stmt.Expression) {
         this.evaluate(stmt.expression);
     }
@@ -105,7 +109,7 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
         console.log(this.stringify(value));
     }
 
-    public visitVarStmt(stmt: Stmt.Var): void {
+    public visitVarStmt(stmt: Stmt.Var) {
         let value = null;
         if (stmt.initializer != null) {
             value = this.evaluate(stmt.initializer);
@@ -115,9 +119,24 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
     }
 
     // http://craftinginterpreters.com/statements-and-state.html#statements
+    // http://craftinginterpreters.com/statements-and-state.html#scope
 
     private execute(stmt: Stmt.Stmt) {
         stmt.accept(this);
+    }
+
+    private executeBlock(statements: Stmt.Stmt[], environment: Environment) {
+        const previous = this.environment;
+        try {
+            this.environment = environment;
+
+            statements.forEach((statement) => {
+                this.execute(statement);
+            });
+        }
+        finally {
+            this.environment = previous;
+        }
     }
 
     // http://craftinginterpreters.com/evaluating-expressions.html
