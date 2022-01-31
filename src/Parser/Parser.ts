@@ -1,15 +1,6 @@
 import { Token, TokenType } from "../Lexer/Token";
 import { Binary, Expr, Grouping, Literal, Unary } from "../Ast/Expr";
-import { reportError } from "../Lox";
-
-export class ParseError extends Error {
-    public constructor(
-        public readonly token: Token,
-        public readonly message: string
-    ) {
-        super();
-    }
-}
+import { ParseError, reportError } from "../Lox";
 
 export class Parser {
     private tokens: Token[] = [];
@@ -172,10 +163,10 @@ export class Parser {
 
         if (this.match(TokenType.LEFT_PAREN)) {
             const expr = this.expression();
-            this.consume(TokenType.RIGHT_PAREN, "Expect ')' after expression");
+            this.consume(TokenType.RIGHT_PAREN, "Expected ')' after expression");
             return new Grouping(expr);
         }
 
-        throw this.error(this.peek(), "Expect expression");
+        throw this.error(this.peek(), "Expected expression");
     }
 }

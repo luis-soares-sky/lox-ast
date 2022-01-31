@@ -5,14 +5,39 @@ import { createInterface, Interface } from "readline";
 import { Scanner } from "./Lexer/Scanner";
 import { Token } from "./Lexer/Token";
 import { Parser } from "./Parser/Parser";
+import { Interpreter } from "./Parser/Interpreter";
 import { Expr } from "./Ast/Expr";
-import { ExprAstPrinter } from "./Ast/AstPrinter";
 
+const interpreter = new Interpreter();
 let hadError = false;
+let hadRuntimeError = false;
+
+export class ParseError extends Error {
+    public constructor(
+        public readonly token: Token,
+        public readonly message: string
+    ) {
+        super();
+    }
+}
+
+export class RuntimeError extends Error {
+    public constructor(
+        public readonly token: Token,
+        public readonly message: string
+    ) {
+        super();
+    }
+}
 
 export function reportError(line: number, column: number, where: string, message: string) {
     console.error(`[${line}:${column}] Error${where}: ${message}`);
     hadError = true;
+}
+
+export function reportRuntimeError(error: RuntimeError) {
+    console.error(`[${error.token.line}:${error.token.column}] Runtime error: ${error.message}`);
+    hadRuntimeError = true;
 }
 
 export function runContents(contents: string) {
@@ -21,18 +46,18 @@ export function runContents(contents: string) {
     const parser: Parser = new Parser(tokens);
     const expression: Expr | null = parser.parse();
 
-    if (hadError) return;
+    if (expression == null) return; // Stop if the expression is null.
+    if (hadError) return; // Stop if there was a syntax error.
 
-    if (expression != null) {
-        console.log(new ExprAstPrinter().print(expression));
-    }
+    interpreter.interpret(expression);
 }
 
 export async function runFile(path: string) {
     const buffer = await readFile(resolve(path));
     runContents(buffer.toString());
 
-    if (hadError) process.exit(65);
+    if (hadError) return process.exit(65);
+    if (hadRuntimeError) return process.exit(70);
 }
 
 export async function runPrompt() {
@@ -49,13 +74,14 @@ export async function runPrompt() {
             break;
         }
         runContents(line);
+        console.log(); // Blank line after printing result.
         hadError = false;
     }
 }
 
 function requestCommandLinePrompt(rl: Interface): Promise<string | null> {
     return new Promise((resolve) => {
-        rl.question("\ntslox> ", (line) => {
+        rl.question("tslox> ", (line) => {
             line = line.trim();
             if (line.length == 0) {
                 resolve(null);
