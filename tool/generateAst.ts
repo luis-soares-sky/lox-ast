@@ -57,7 +57,7 @@ function defineVisitor(baseName: string, typeDefs: AstTypeDef[]): string[] {
         ``,
         `export interface Visitor<T> {`,
         ...typeDefs.map((type) => {
-            return `    visit${type.name}${baseName}(expr: ${type.name}): T;`;
+            return `    visit${type.name}${baseName}(${baseName.toLowerCase()}: ${type.name}): T;`;
         }),
         `}`
     ];

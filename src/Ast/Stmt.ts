@@ -4,8 +4,8 @@
 import { Expr } from "./Expr";
 
 export interface Visitor<T> {
-    visitExpressionStmt(expr: Expression): T;
-    visitPrintStmt(expr: Print): T;
+    visitExpressionStmt(stmt: Expression): T;
+    visitPrintStmt(stmt: Print): T;
 }
 
 export interface Stmt {
