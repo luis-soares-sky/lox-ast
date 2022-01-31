@@ -105,7 +105,7 @@ export class Scanner {
         while (this.isAlphaNumeric(this.peek())) this.advance();
 
         const text = this.source.substring(this.start, this.current);
-        let type = TokenKeywordMap[text.toLowerCase()];
+        let type = TokenKeywordMap[text];
         if (type == null) type = TokenType.IDENTIFIER;
         this.addToken(type);
     }
