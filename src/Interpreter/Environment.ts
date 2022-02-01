@@ -6,6 +6,16 @@ export class Environment {
 
     public constructor(private readonly enclosing?: Environment) { }
 
+    public ancestor(distance: number): Environment {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        let environment: Environment = this;
+        for (let i = 0; i < distance; i++) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            environment = environment.enclosing!;
+        }
+        return environment;
+    }
+
     public assign(name: Token, value: unknown) {
         if (this.values.has(name.lexeme)) {
             this.values.set(name.lexeme, value);
@@ -18,6 +28,10 @@ export class Environment {
         }
 
         throw new RuntimeError(name, `Undefined variable '${name.lexeme}'`);
+    }
+
+    public assignAt(distance: number, name: Token, value: unknown) {
+        this.ancestor(distance).values.set(name.lexeme, value);
     }
 
     public define(name: string, value: unknown) {
@@ -34,5 +48,9 @@ export class Environment {
         }
 
         throw new RuntimeError(name, `Undefined variable '${name.lexeme}'`);
+    }
+
+    public getAt(distance: number, name: string): unknown {
+        return this.ancestor(distance).values.get(name);
     }
 }

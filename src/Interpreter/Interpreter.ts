@@ -7,6 +7,7 @@ import { reportRuntimeError, ReturnError, RuntimeError } from "../Lox";
 
 export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
     public readonly globals = generateNativeEnvironment();
+    private readonly locals = new Map<Expr.Expr, number>();
     private environment = this.globals;
 
     public interpret(statements: Stmt.Stmt[]) {
@@ -26,7 +27,15 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
 
     public visitAssignExpr(expr: Expr.Assign): unknown {
         const value = this.evaluate(expr.value);
-        this.environment.assign(expr.name, value);
+
+        const distance = this.locals.get(expr);
+        if (distance != null) {
+            this.environment.assignAt(distance, expr.name, value);
+        }
+        else {
+            this.globals.assign(expr.name, value);
+        }
+
         return value;
     }
 
@@ -124,7 +133,7 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
     }
 
     public visitVariableExpr(expr: Expr.Variable): unknown {
-        return this.environment.get(expr.name);
+        return this.lookUpVariable(expr.name, expr);
     }
 
     public visitBlockStmt(stmt: Stmt.Block): void {
@@ -173,6 +182,22 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
     public visitWhileStmt(stmt: Stmt.While): void {
         while (this.isTruthy(this.evaluate(stmt.condition))) {
             this.execute(stmt.body);
+        }
+    }
+
+    // http://craftinginterpreters.com/resolving-and-binding.html
+
+    public resolveLocal(expr: Expr.Expr, depth: number): void {
+        this.locals.set(expr, depth);
+    }
+
+    private lookUpVariable(name: Token, expr: Expr.Expr): unknown {
+        const distance = this.locals.get(expr);
+        if (distance != null) {
+            return this.environment.getAt(distance, name.lexeme);
+        }
+        else {
+            return this.globals.get(name);
         }
     }
 

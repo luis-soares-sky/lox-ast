@@ -6,6 +6,7 @@ import { Scanner } from "./Lexer/Scanner";
 import { Token } from "./Lexer/Token";
 import { Parser } from "./Parser/Parser";
 import { Interpreter } from "./Interpreter/Interpreter";
+import { Resolver } from "./Interpreter/Resolver";
 
 const interpreter = new Interpreter();
 let hadError = false;
@@ -54,6 +55,11 @@ export function run(source: string) {
     const statements = parser.parse();
 
     if (hadError) return; // Stop if there was a syntax error.
+
+    const resolver = new Resolver(interpreter);
+    resolver.resolveStatementList(statements);
+
+    if (hadError) return; // Stop if there was a resolution error.
 
     interpreter.interpret(statements);
 }
