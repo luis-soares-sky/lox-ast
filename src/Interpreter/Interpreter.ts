@@ -136,7 +136,7 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
     }
 
     public visitFunStmt(stmt: Stmt.Fun): void {
-        const fun = new LoxFunction(stmt);
+        const fun = new LoxFunction(stmt, this.environment);
         this.environment.define(stmt.name.lexeme, fun);
     }
 

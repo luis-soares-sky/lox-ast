@@ -10,7 +10,10 @@ export abstract class LoxCallable {
 }
 
 export class LoxFunction extends LoxCallable {
-    public constructor(private readonly declaration: Stmt.Fun) {
+    public constructor(
+        private readonly declaration: Stmt.Fun,
+        private readonly closure: Environment
+    ) {
         super();
     }
 
@@ -19,7 +22,7 @@ export class LoxFunction extends LoxCallable {
     }
 
     public call(interpreter: Interpreter, args: unknown[]) {
-        const environment = new Environment(interpreter.globals);
+        const environment = new Environment(this.closure);
 
         for (let i = 0; i < this.declaration.params.length; i++) {
             environment.define(this.declaration.params[i].lexeme, args[i]);
