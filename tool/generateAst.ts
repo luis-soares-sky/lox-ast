@@ -95,6 +95,7 @@ const srcPath = relative(resolve(args[0]), resolve(__dirname + "/../src/")).repl
 defineAst(args[0], "Expr", [
     "Assign   : Token name, Expr value",
     "Binary   : Expr left, Token operator, Expr right",
+    "Call     : Expr callee, Token paren, Expr[] args",
     "Grouping : Expr expression",
     "Literal  : unknown value",
     "Logical  : Expr left, Token operator, Expr right",
@@ -107,6 +108,7 @@ defineAst(args[0], "Expr", [
 defineAst(args[0], "Stmt", [
     "Block      : Stmt[] statements",
     "Expression : Expr expression",
+    "Fun        : Token name, Token[] params, Stmt[] body",
     "If         : Expr condition, Stmt thenBranch, Stmt elseBranch?",
     "Print      : Expr expression",
     "Var        : Token name, Expr initializer?",

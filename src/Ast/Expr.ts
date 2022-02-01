@@ -6,6 +6,7 @@ import { Token } from "../Lexer/Token";
 export interface Visitor<T> {
     visitAssignExpr(expr: Assign): T;
     visitBinaryExpr(expr: Binary): T;
+    visitCallExpr(expr: Call): T;
     visitGroupingExpr(expr: Grouping): T;
     visitLiteralExpr(expr: Literal): T;
     visitLogicalExpr(expr: Logical): T;
@@ -37,6 +38,18 @@ export class Binary implements Expr {
 
     public accept<T>(visitor: Visitor<T>): T {
         return visitor.visitBinaryExpr(this);
+    }
+}
+
+export class Call implements Expr {
+    public constructor(
+        public readonly callee: Expr,
+        public readonly paren: Token,
+        public readonly args: Expr[],
+    ) { }
+
+    public accept<T>(visitor: Visitor<T>): T {
+        return visitor.visitCallExpr(this);
     }
 }
 

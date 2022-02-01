@@ -5,7 +5,7 @@ import { createInterface, Interface } from "readline";
 import { Scanner } from "./Lexer/Scanner";
 import { Token } from "./Lexer/Token";
 import { Parser } from "./Parser/Parser";
-import { Interpreter } from "./Parser/Interpreter";
+import { Interpreter } from "./Interpreter/Interpreter";
 
 const interpreter = new Interpreter();
 let hadError = false;

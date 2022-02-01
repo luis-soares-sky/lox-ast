@@ -1,3 +1,4 @@
+import { LoxCallable, generateNativeEnvironment, LoxFunction } from "./Callable";
 import { Environment } from "./Environment";
 import * as Expr from "../Ast/Expr";
 import * as Stmt from "../Ast/Stmt";
@@ -5,7 +6,8 @@ import { Token, TokenType } from "../Lexer/Token";
 import { reportRuntimeError, RuntimeError } from "../Lox";
 
 export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
-    private environment = new Environment();
+    public readonly globals = generateNativeEnvironment();
+    private environment = this.globals;
 
     public interpret(statements: Stmt.Stmt[]) {
         try {
@@ -69,6 +71,22 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
         return null;
     }
 
+    public visitCallExpr(expr: Expr.Call): unknown {
+        const callee = this.evaluate(expr.callee);
+        const args = expr.args.map((arg) => this.evaluate(arg));
+
+        if (!(callee instanceof LoxCallable)) {
+            throw new RuntimeError(expr.paren, "Can only call functions and classes");
+        }
+
+        const fun: LoxCallable = <LoxCallable>callee;
+        if (args.length != fun.arity()) {
+            throw new RuntimeError(expr.paren, `Expected ${fun.arity()} arguments but got ${args.length}`);
+        }
+
+        return fun.call(this, args);
+    }
+
     public visitGroupingExpr(expr: Expr.Grouping): unknown {
         return this.evaluate(expr.expression);
     }
@@ -117,6 +135,11 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
         this.evaluate(stmt.expression);
     }
 
+    public visitFunStmt(stmt: Stmt.Fun): void {
+        const fun = new LoxFunction(stmt);
+        this.environment.define(stmt.name.lexeme, fun);
+    }
+
     public visitIfStmt(stmt: Stmt.If): void {
         if (this.isTruthy(this.evaluate(stmt.condition))) {
             this.execute(stmt.thenBranch);
@@ -149,11 +172,11 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
     // http://craftinginterpreters.com/statements-and-state.html#statements
     // http://craftinginterpreters.com/statements-and-state.html#scope
 
-    private execute(stmt: Stmt.Stmt) {
+    public execute(stmt: Stmt.Stmt) {
         stmt.accept(this);
     }
 
-    private executeBlock(statements: Stmt.Stmt[], environment: Environment) {
+    public executeBlock(statements: Stmt.Stmt[], environment: Environment) {
         const previous = this.environment;
         try {
             this.environment = environment;

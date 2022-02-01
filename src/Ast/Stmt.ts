@@ -7,6 +7,7 @@ import { Token } from "../Lexer/Token";
 export interface Visitor<T> {
     visitBlockStmt(stmt: Block): T;
     visitExpressionStmt(stmt: Expression): T;
+    visitFunStmt(stmt: Fun): T;
     visitIfStmt(stmt: If): T;
     visitPrintStmt(stmt: Print): T;
     visitVarStmt(stmt: Var): T;
@@ -34,6 +35,18 @@ export class Expression implements Stmt {
 
     public accept<T>(visitor: Visitor<T>): T {
         return visitor.visitExpressionStmt(this);
+    }
+}
+
+export class Fun implements Stmt {
+    public constructor(
+        public readonly name: Token,
+        public readonly params: Token[],
+        public readonly body: Stmt[],
+    ) { }
+
+    public accept<T>(visitor: Visitor<T>): T {
+        return visitor.visitFunStmt(this);
     }
 }
 
