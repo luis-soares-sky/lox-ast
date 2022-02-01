@@ -1,5 +1,5 @@
 fun hello(name) {
-    print "hello " + name + "!";
+    print "Hello, " + name + "!";
 }
 
 fun count(n) {
@@ -8,4 +8,7 @@ fun count(n) {
 }
 
 hello("World");
+print "The current machine time in seconds is: " + clock();
+print "I'll start counting now:";
 count(3);
+

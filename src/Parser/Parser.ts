@@ -14,6 +14,10 @@ export class Parser {
     public parse(): Stmt.Stmt[] {
         const statements: Stmt.Stmt[] = [];
         while (!this.isAtEnd()) {
+            if (this.match(TokenType.INLINE_COMMENT, TokenType.BLOCK_COMMENT)) {
+                continue; // Ignore comments.
+            }
+
             try {
                 statements.push(this.declaration());
             }
