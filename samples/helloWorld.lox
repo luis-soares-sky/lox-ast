@@ -1,13 +1,13 @@
 fun hello(name) {
-    print "Hello, " + name + "!";
+    return "Hello, " + name + "!";
 }
 
 fun count(n) {
-  if (n > 1) count(n - 1);
-  print n;
+    if (n > 1) count(n - 1);
+    print n;
 }
 
-hello("World");
+print hello("World");
 print "The current machine time in seconds is: " + clock();
 print "I'll start counting now:";
 count(3);

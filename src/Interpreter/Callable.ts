@@ -1,4 +1,5 @@
 import * as Stmt from "../Ast/Stmt";
+import { ReturnError } from "../Lox";
 import { Environment } from "./Environment";
 import { Interpreter } from "./Interpreter";
 
@@ -24,7 +25,15 @@ export class LoxFunction extends LoxCallable {
             environment.define(this.declaration.params[i].lexeme, args[i]);
         }
 
-        interpreter.executeBlock(this.declaration.body, environment);
+        try {
+            interpreter.executeBlock(this.declaration.body, environment);
+        }
+        catch (e) {
+            if (e instanceof ReturnError) {
+                return e.value;
+            }
+            throw e; // Rethrow everything that's not specifically a "Return" error.
+        }
         return null;
     }
 

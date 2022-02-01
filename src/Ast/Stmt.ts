@@ -10,6 +10,7 @@ export interface Visitor<T> {
     visitFunStmt(stmt: Fun): T;
     visitIfStmt(stmt: If): T;
     visitPrintStmt(stmt: Print): T;
+    visitReturnStmt(stmt: Return): T;
     visitVarStmt(stmt: Var): T;
     visitWhileStmt(stmt: While): T;
 }
@@ -69,6 +70,17 @@ export class Print implements Stmt {
 
     public accept<T>(visitor: Visitor<T>): T {
         return visitor.visitPrintStmt(this);
+    }
+}
+
+export class Return implements Stmt {
+    public constructor(
+        public readonly keyword: Token,
+        public readonly value?: Expr,
+    ) { }
+
+    public accept<T>(visitor: Visitor<T>): T {
+        return visitor.visitReturnStmt(this);
     }
 }
 

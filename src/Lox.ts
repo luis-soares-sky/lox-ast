@@ -29,6 +29,14 @@ export class RuntimeError extends Error {
     }
 }
 
+export class ReturnError extends Error {
+    public constructor(
+        public readonly value: unknown
+    ) {
+        super();
+    }
+}
+
 export function reportError(line: number, column: number, where: string, message: string) {
     console.error(`[${line}:${column}] Error${where}: ${message}`);
     hadError = true;

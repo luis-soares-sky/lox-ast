@@ -3,7 +3,7 @@ import { Environment } from "./Environment";
 import * as Expr from "../Ast/Expr";
 import * as Stmt from "../Ast/Stmt";
 import { Token, TokenType } from "../Lexer/Token";
-import { reportRuntimeError, RuntimeError } from "../Lox";
+import { reportRuntimeError, ReturnError, RuntimeError } from "../Lox";
 
 export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
     public readonly globals = generateNativeEnvironment();
@@ -152,6 +152,13 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
     public visitPrintStmt(stmt: Stmt.Print): void {
         const value = this.evaluate(stmt.expression);
         console.log(this.stringify(value));
+    }
+
+    public visitReturnStmt(stmt: Stmt.Return): void {
+        const value = stmt.value != null
+            ? this.evaluate(stmt.value)
+            : null;
+        throw new ReturnError(value);
     }
 
     public visitVarStmt(stmt: Stmt.Var): void {
