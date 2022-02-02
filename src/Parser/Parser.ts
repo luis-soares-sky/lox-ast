@@ -216,6 +216,13 @@ export class Parser {
 
     private classDeclaration(): Stmt.Stmt {
         const name = this.consume(TokenType.IDENTIFIER, "Expected a class name");
+
+        let superclass = undefined;
+        if (this.match(TokenType.LESS)) {
+            this.consume(TokenType.IDENTIFIER, "Expected superclass name");
+            superclass = new Expr.Variable(this.previous());
+        }
+
         this.consume(TokenType.LEFT_BRACE, "Expected '{' before class body");
 
         const methods: Stmt.Fun[] = [];
@@ -225,7 +232,7 @@ export class Parser {
 
         this.consume(TokenType.RIGHT_BRACE, "Expected '}' after class body");
 
-        return new Stmt.Class(name, methods);
+        return new Stmt.Class(name, superclass, methods);
     }
 
     private functionDeclaration(kind: string): Stmt.Fun {
@@ -409,6 +416,13 @@ export class Parser {
 
         if (this.match(TokenType.NUMBER, TokenType.STRING)) {
             return new Expr.Literal(this.previous().literal);
+        }
+
+        if (this.match(TokenType.SUPER)) {
+            const keyword = this.previous();
+            this.consume(TokenType.DOT, "Expected '.' after 'super'");
+            const method = this.consume(TokenType.IDENTIFIER, "Expected superclass method name");
+            return new Expr.Super(keyword, method);
         }
 
         if (this.match(TokenType.THIS)) return new Expr.This(this.previous());

@@ -27,8 +27,8 @@ async function defineAst(outputDir: string, baseName: string, types: string[], i
             fields: typeParts[1].trim().split(",").map((field) => {
                 const fieldParts = field.trim().split(" ");
                 return {
-                    name: fieldParts[1],
-                    type: fieldParts[0]
+                    name: fieldParts[fieldParts.length - 1],
+                    type: fieldParts.slice(0, fieldParts.length - 1).join(" ")
                 };
             })
         };
@@ -101,6 +101,7 @@ defineAst(args[0], "Expr", [
     "Literal  : unknown value",
     "Logical  : Expr left, Token operator, Expr right",
     "Set      : Expr object, Token name, Expr value",
+    "Super    : Token keyword, Token method",
     "This     : Token keyword",
     "Unary    : Token operator, Expr right",
     "Variable : Token name"
@@ -110,7 +111,7 @@ defineAst(args[0], "Expr", [
 
 defineAst(args[0], "Stmt", [
     "Block      : Stmt[] statements",
-    "Class      : Token name, Fun[] methods",
+    "Class      : Token name, Variable | undefined superclass, Fun[] methods",
     "Expression : Expr expression",
     "Fun        : Token name, Token[] params, Stmt[] body",
     "If         : Expr condition, Stmt thenBranch, Stmt elseBranch?",
@@ -119,6 +120,6 @@ defineAst(args[0], "Stmt", [
     "Var        : Token name, Expr initializer?",
     "While      : Expr condition, Stmt body"
 ], [
-    `import { Expr } from "./Expr";`,
+    `import { Expr, Variable } from "./Expr";`,
     `import { Token } from "${srcPath}/Lexer/Token";`
 ]);

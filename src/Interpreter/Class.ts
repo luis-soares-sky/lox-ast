@@ -5,6 +5,7 @@ import { Interpreter } from "./Interpreter";
 export class LoxClass extends LoxCallable {
     public constructor(
         public readonly name: string,
+        public readonly superclass: LoxClass | undefined,
         private readonly methods: Map<string, LoxFunction>
     ) {
         super();
@@ -23,6 +24,10 @@ export class LoxClass extends LoxCallable {
     public findMethod(name: string): LoxFunction | undefined {
         if (this.methods.has(name)) {
             return this.methods.get(name);
+        }
+
+        if (this.superclass != null) {
+            return this.superclass.findMethod(name);
         }
 
         return undefined;

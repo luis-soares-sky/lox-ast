@@ -12,6 +12,7 @@ export interface Visitor<T> {
     visitLiteralExpr(expr: Literal): T;
     visitLogicalExpr(expr: Logical): T;
     visitSetExpr(expr: Set): T;
+    visitSuperExpr(expr: Super): T;
     visitThisExpr(expr: This): T;
     visitUnaryExpr(expr: Unary): T;
     visitVariableExpr(expr: Variable): T;
@@ -108,6 +109,17 @@ export class Set implements Expr {
 
     public accept<T>(visitor: Visitor<T>): T {
         return visitor.visitSetExpr(this);
+    }
+}
+
+export class Super implements Expr {
+    public constructor(
+        public readonly keyword: Token,
+        public readonly method: Token,
+    ) { }
+
+    public accept<T>(visitor: Visitor<T>): T {
+        return visitor.visitSuperExpr(this);
     }
 }
 

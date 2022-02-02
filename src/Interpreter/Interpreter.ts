@@ -140,6 +140,21 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
         return value;
     }
 
+    public visitSuperExpr(expr: Expr.Super): unknown {
+        const distance = <number>this.locals.get(expr);
+        const superclass = <LoxClass>this.environment.getAt(distance, "super");
+
+        const object = <LoxInstance>this.environment.getAt(distance - 1, "this");
+
+        const method = superclass.findMethod(expr.method.lexeme);
+
+        if (method == null) {
+            throw new RuntimeError(expr.method, `Undefined property '${expr.method.lexeme}'`);
+        }
+
+        return method.bind(object);
+    }
+
     public visitThisExpr(expr: Expr.This): unknown {
         return this.lookUpVariable(expr.keyword, expr);
     }
@@ -168,7 +183,20 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
     }
 
     public visitClassStmt(stmt: Stmt.Class): void {
+        let superclass = undefined;
+        if (stmt.superclass != null) {
+            superclass = this.evaluate(stmt.superclass);
+            if (!(superclass instanceof LoxClass)) {
+                throw new RuntimeError(stmt.superclass.name, "Superclass must be a class");
+            }
+        }
+
         this.environment.define(stmt.name.lexeme, null);
+
+        if (stmt.superclass != null) {
+            this.environment = new Environment(this.environment);
+            this.environment.define("super", superclass);
+        }
 
         const methods = new Map<string, LoxFunction>();
         stmt.methods.forEach((method) => {
@@ -176,7 +204,12 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
             methods.set(method.name.lexeme, fun);
         });
 
-        const klass = new LoxClass(stmt.name.lexeme, methods);
+        const klass = new LoxClass(stmt.name.lexeme, superclass, methods);
+
+        if (superclass != null) {
+            this.environment = <Environment>this.environment.enclosing;
+        }
+
         this.environment.assign(stmt.name, klass);
     }
 

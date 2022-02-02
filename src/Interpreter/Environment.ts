@@ -4,7 +4,9 @@ import { Token } from "../Lexer/Token";
 export class Environment {
     private readonly values = new Map<string, unknown>();
 
-    public constructor(private readonly enclosing?: Environment) { }
+    public constructor(
+        public readonly enclosing?: Environment
+    ) { }
 
     public ancestor(distance: number): Environment {
         // eslint-disable-next-line @typescript-eslint/no-this-alias

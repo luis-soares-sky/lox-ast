@@ -4,7 +4,7 @@ import { Token } from "../Lexer/Token";
 import { reportError } from "../Lox";
 import { Interpreter } from "./Interpreter";
 
-export enum ClassType { NONE, CLASS }
+export enum ClassType { NONE, CLASS, SUBCLASS }
 export enum FunctionType { NONE, FUNCTION, INITIALIZER, METHOD }
 
 export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
@@ -29,6 +29,20 @@ export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
         this.declare(stmt.name);
         this.define(stmt.name);
 
+        if (stmt.superclass != null) {
+            if (stmt.name.lexeme == stmt.superclass.name.lexeme) {
+                reportError(stmt.superclass.name.line, stmt.superclass.name.column, "", "A class can't inherit from itself");
+            }
+
+            this.currentClass = ClassType.SUBCLASS;
+            this.resolveExpression(stmt.superclass);
+        }
+
+        if (stmt.superclass != null) {
+            this.beginScope();
+            this.scopes[this.scopes.length - 1].set("super", true);
+        }
+
         this.beginScope();
         this.scopes[this.scopes.length - 1].set("this", true);
         stmt.methods.forEach((method) => {
@@ -39,6 +53,10 @@ export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
             this.resolveFunction(method, declaration);
         });
         this.endScope();
+
+        if (stmt.superclass != null) {
+            this.endScope();
+        }
 
         this.currentClass = enclosingClass;
     }
@@ -130,6 +148,17 @@ export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
     public visitSetExpr(expr: Expr.Set): void {
         this.resolveExpression(expr.value);
         this.resolveExpression(expr.object);
+    }
+
+    public visitSuperExpr(expr: Expr.Super): void {
+        if (this.currentClass == ClassType.NONE) {
+            reportError(expr.keyword.line, expr.keyword.column, "", "Can't use 'super' outside of a class");
+        }
+        else if (this.currentClass != ClassType.SUBCLASS) {
+            reportError(expr.keyword.line, expr.keyword.column, "", "Can't use 'super' in a class with no superclass");
+        }
+
+        this.resolveLocal(expr, expr.keyword);
     }
 
     public visitThisExpr(expr: Expr.This): void {
