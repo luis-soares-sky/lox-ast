@@ -7,9 +7,12 @@ export interface Visitor<T> {
     visitAssignExpr(expr: Assign): T;
     visitBinaryExpr(expr: Binary): T;
     visitCallExpr(expr: Call): T;
+    visitGetExpr(expr: Get): T;
     visitGroupingExpr(expr: Grouping): T;
     visitLiteralExpr(expr: Literal): T;
     visitLogicalExpr(expr: Logical): T;
+    visitSetExpr(expr: Set): T;
+    visitThisExpr(expr: This): T;
     visitUnaryExpr(expr: Unary): T;
     visitVariableExpr(expr: Variable): T;
 }
@@ -53,6 +56,17 @@ export class Call implements Expr {
     }
 }
 
+export class Get implements Expr {
+    public constructor(
+        public readonly object: Expr,
+        public readonly name: Token,
+    ) { }
+
+    public accept<T>(visitor: Visitor<T>): T {
+        return visitor.visitGetExpr(this);
+    }
+}
+
 export class Grouping implements Expr {
     public constructor(
         public readonly expression: Expr,
@@ -82,6 +96,28 @@ export class Logical implements Expr {
 
     public accept<T>(visitor: Visitor<T>): T {
         return visitor.visitLogicalExpr(this);
+    }
+}
+
+export class Set implements Expr {
+    public constructor(
+        public readonly object: Expr,
+        public readonly name: Token,
+        public readonly value: Expr,
+    ) { }
+
+    public accept<T>(visitor: Visitor<T>): T {
+        return visitor.visitSetExpr(this);
+    }
+}
+
+export class This implements Expr {
+    public constructor(
+        public readonly keyword: Token,
+    ) { }
+
+    public accept<T>(visitor: Visitor<T>): T {
+        return visitor.visitThisExpr(this);
     }
 }
 

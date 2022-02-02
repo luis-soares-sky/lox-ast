@@ -207,15 +207,25 @@ export class Parser {
     }
 
     private declaration(): Stmt.Stmt {
-        if (this.match(TokenType.FUN)) {
-            return this.functionDeclaration("function");
-        }
-
-        if (this.match(TokenType.VAR)) {
-            return this.varDeclaration();
-        }
+        if (this.match(TokenType.CLASS)) return this.classDeclaration();
+        if (this.match(TokenType.FUN)) return this.functionDeclaration("function");
+        if (this.match(TokenType.VAR)) return this.varDeclaration();
 
         return this.statement();
+    }
+
+    private classDeclaration(): Stmt.Stmt {
+        const name = this.consume(TokenType.IDENTIFIER, "Expected a class name");
+        this.consume(TokenType.LEFT_BRACE, "Expected '{' before class body");
+
+        const methods: Stmt.Fun[] = [];
+        while (!this.check(TokenType.RIGHT_BRACE) && !this.isAtEnd()) {
+            methods.push(this.functionDeclaration("method"));
+        }
+
+        this.consume(TokenType.RIGHT_BRACE, "Expected '}' after class body");
+
+        return new Stmt.Class(name, methods);
     }
 
     private functionDeclaration(kind: string): Stmt.Fun {
@@ -264,8 +274,10 @@ export class Parser {
             const value = this.assignment();
 
             if (expr instanceof Expr.Variable) {
-                const name = expr.name;
-                return new Expr.Assign(name, value);
+                return new Expr.Assign(expr.name, value);
+            }
+            else if (expr instanceof Expr.Get) {
+                return new Expr.Set(expr.object, expr.name, value);
             }
 
             this.error(equals, "Invalid assignment target");
@@ -364,6 +376,10 @@ export class Parser {
             if (this.match(TokenType.LEFT_PAREN)) {
                 expr = this.finishCall(expr);
             }
+            else if (this.match(TokenType.DOT)) {
+                const name = this.consume(TokenType.IDENTIFIER, "Expected property name after '.'");
+                expr = new Expr.Get(expr, name);
+            }
             else break;
         }
 
@@ -394,6 +410,8 @@ export class Parser {
         if (this.match(TokenType.NUMBER, TokenType.STRING)) {
             return new Expr.Literal(this.previous().literal);
         }
+
+        if (this.match(TokenType.THIS)) return new Expr.This(this.previous());
 
         if (this.match(TokenType.IDENTIFIER)) {
             return new Expr.Variable(this.previous());

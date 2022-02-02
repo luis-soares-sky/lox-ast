@@ -1,0 +1,39 @@
+// ====================
+// SIMPLE CLASS EXAMPLE
+// ====================
+
+class Person {
+    sayName() {
+        print "Hello, I am " + this.name;
+    }
+}
+
+var jane = Person();
+jane.name = "Jane";
+jane.sayName(); // should output "Hello, I am Jane"
+
+var bill = Person();
+bill.name = "Bill";
+bill.sayName(); // should output "Hello, I am Bill"
+
+// ====================
+// PATHOLOGICAL EXAMPLE
+// ====================
+
+bill.sayName = jane.sayName;
+bill.sayName(); // should output "Hello, I am Jane"
+
+// ==============
+// BOXING EXAMPLE
+// ==============
+
+fun notMethod(argument) {
+    print "called function with " + argument;
+}
+
+class Box {}
+
+var box = Box();
+box.function = notMethod;
+box.function("argument");
+

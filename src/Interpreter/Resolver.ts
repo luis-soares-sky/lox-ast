@@ -4,10 +4,12 @@ import { Token } from "../Lexer/Token";
 import { reportError } from "../Lox";
 import { Interpreter } from "./Interpreter";
 
-export enum FunctionType { NONE, FUNCTION }
+export enum ClassType { NONE, CLASS }
+export enum FunctionType { NONE, FUNCTION, INITIALIZER, METHOD }
 
 export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
     private readonly scopes: Map<string, boolean>[] = [];
+    private currentClass = ClassType.NONE;
     private currentFunction = FunctionType.NONE;
 
     public constructor(
@@ -18,6 +20,27 @@ export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
         this.beginScope();
         this.resolveStatementList(stmt.statements);
         this.endScope();
+    }
+
+    public visitClassStmt(stmt: Stmt.Class): void {
+        const enclosingClass = this.currentClass;
+        this.currentClass = ClassType.CLASS;
+
+        this.declare(stmt.name);
+        this.define(stmt.name);
+
+        this.beginScope();
+        this.scopes[this.scopes.length - 1].set("this", true);
+        stmt.methods.forEach((method) => {
+            let declaration = FunctionType.METHOD;
+            if (method.name.lexeme == "init") {
+                declaration = FunctionType.INITIALIZER;
+            }
+            this.resolveFunction(method, declaration);
+        });
+        this.endScope();
+
+        this.currentClass = enclosingClass;
     }
 
     public visitExpressionStmt(stmt: Stmt.Expression): void {
@@ -46,7 +69,13 @@ export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
             reportError(stmt.keyword.line, stmt.keyword.column, "", "Can't return from top-level code");
         }
 
-        if (stmt.value != null) this.resolveExpression(stmt.value);
+        if (stmt.value != null) {
+            if (this.currentFunction == FunctionType.INITIALIZER) {
+                reportError(stmt.keyword.line, stmt.keyword.column, "", "Can't return a value from an initializer");
+            }
+
+            this.resolveExpression(stmt.value);
+        }
     }
 
     public visitVarStmt(stmt: Stmt.Var): void {
@@ -80,6 +109,10 @@ export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
         });
     }
 
+    public visitGetExpr(expr: Expr.Get): void {
+        this.resolveExpression(expr.object);
+    }
+
     public visitGroupingExpr(expr: Expr.Grouping): void {
         this.resolveExpression(expr.expression);
     }
@@ -92,6 +125,20 @@ export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
     public visitLogicalExpr(expr: Expr.Logical): void {
         this.resolveExpression(expr.left);
         this.resolveExpression(expr.right);
+    }
+
+    public visitSetExpr(expr: Expr.Set): void {
+        this.resolveExpression(expr.value);
+        this.resolveExpression(expr.object);
+    }
+
+    public visitThisExpr(expr: Expr.This): void {
+        if (this.currentClass == ClassType.NONE) {
+            reportError(expr.keyword.line, expr.keyword.column, "", "Can't use 'this' outside of a class");
+            return;
+        }
+
+        this.resolveLocal(expr, expr.keyword);
     }
 
     public visitUnaryExpr(expr: Expr.Unary): void {

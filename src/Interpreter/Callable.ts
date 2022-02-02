@@ -1,6 +1,7 @@
 import * as Stmt from "../Ast/Stmt";
 import { ReturnError } from "../Lox";
 import { Environment } from "./Environment";
+import { LoxInstance } from "./Instance";
 import { Interpreter } from "./Interpreter";
 
 export abstract class LoxCallable {
@@ -12,13 +13,20 @@ export abstract class LoxCallable {
 export class LoxFunction extends LoxCallable {
     public constructor(
         private readonly declaration: Stmt.Fun,
-        private readonly closure: Environment
+        private readonly closure: Environment,
+        private readonly isInitializer: boolean
     ) {
         super();
     }
 
     public arity(): number {
         return this.declaration.params.length;
+    }
+
+    public bind(instance: LoxInstance): LoxFunction {
+        const environment = new Environment(this.closure);
+        environment.define("this", instance);
+        return new LoxFunction(this.declaration, environment, false);
     }
 
     public call(interpreter: Interpreter, args: unknown[]) {
@@ -33,10 +41,15 @@ export class LoxFunction extends LoxCallable {
         }
         catch (e) {
             if (e instanceof ReturnError) {
+                if (this.isInitializer) return this.closure.getAt(0, "this");
+
                 return e.value;
             }
             throw e; // Rethrow everything that's not specifically a "Return" error.
         }
+
+        if (this.isInitializer) return this.closure.getAt(0, "this");
+
         return null;
     }
 

@@ -1,9 +1,11 @@
 import { LoxCallable, generateNativeEnvironment, LoxFunction } from "./Callable";
+import { LoxClass } from "./Class";
 import { Environment } from "./Environment";
 import * as Expr from "../Ast/Expr";
 import * as Stmt from "../Ast/Stmt";
 import { Token, TokenType } from "../Lexer/Token";
 import { reportRuntimeError, ReturnError, RuntimeError } from "../Lox";
+import { LoxInstance } from "./Instance";
 
 export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
     public readonly globals = generateNativeEnvironment();
@@ -96,6 +98,15 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
         return fun.call(this, args);
     }
 
+    public visitGetExpr(expr: Expr.Get): unknown {
+        const object = this.evaluate(expr.object);
+        if (object instanceof LoxInstance) {
+            return object.get(expr.name);
+        }
+
+        throw new RuntimeError(expr.name, "Only instances have properties");
+    }
+
     public visitGroupingExpr(expr: Expr.Grouping): unknown {
         return this.evaluate(expr.expression);
     }
@@ -115,6 +126,22 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
         }
 
         return this.evaluate(expr.right);
+    }
+
+    public visitSetExpr(expr: Expr.Set): unknown {
+        const object = this.evaluate(expr.object);
+
+        if (!(object instanceof LoxInstance)) {
+            throw new RuntimeError(expr.name, "Only instances have fields");
+        }
+
+        const value = this.evaluate(expr.value);
+        object.set(expr.name, value);
+        return value;
+    }
+
+    public visitThisExpr(expr: Expr.This): unknown {
+        return this.lookUpVariable(expr.keyword, expr);
     }
 
     public visitUnaryExpr(expr: Expr.Unary): unknown {
@@ -140,12 +167,25 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
         this.executeBlock(stmt.statements, new Environment(this.environment));
     }
 
+    public visitClassStmt(stmt: Stmt.Class): void {
+        this.environment.define(stmt.name.lexeme, null);
+
+        const methods = new Map<string, LoxFunction>();
+        stmt.methods.forEach((method) => {
+            const fun = new LoxFunction(method, this.environment, method.name.lexeme == "init");
+            methods.set(method.name.lexeme, fun);
+        });
+
+        const klass = new LoxClass(stmt.name.lexeme, methods);
+        this.environment.assign(stmt.name, klass);
+    }
+
     public visitExpressionStmt(stmt: Stmt.Expression): void {
         this.evaluate(stmt.expression);
     }
 
     public visitFunStmt(stmt: Stmt.Fun): void {
-        const fun = new LoxFunction(stmt, this.environment);
+        const fun = new LoxFunction(stmt, this.environment, false);
         this.environment.define(stmt.name.lexeme, fun);
     }
 
