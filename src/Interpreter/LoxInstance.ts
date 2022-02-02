@@ -1,4 +1,4 @@
-import { LoxClass } from "./Class";
+import { LoxClass } from "./LoxClass";
 import { Token } from "../Lexer/Token";
 import { RuntimeError } from "../Lox";
 

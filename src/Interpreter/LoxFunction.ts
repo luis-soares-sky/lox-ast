@@ -1,14 +1,9 @@
 import * as Stmt from "../Ast/Stmt";
 import { ReturnError } from "../Lox";
 import { Environment } from "./Environment";
-import { LoxInstance } from "./Instance";
 import { Interpreter } from "./Interpreter";
-
-export abstract class LoxCallable {
-    public abstract arity(): number;
-    public abstract call(interpreter: Interpreter, args: unknown[]): unknown;
-    public abstract toString(): string;
-}
+import { LoxInstance } from "./LoxInstance";
+import { LoxCallable } from "./LoxCallable";
 
 export class LoxFunction extends LoxCallable {
     public constructor(
@@ -56,22 +51,4 @@ export class LoxFunction extends LoxCallable {
     public toString(): string {
         return `<fn ${this.declaration.name.lexeme}>`;
     }
-}
-
-// Native functions below.
-
-export abstract class NativeLoxCallable extends LoxCallable {
-    public toString = () => "<native fn>";
-}
-
-export function generateNativeEnvironment() {
-    const e = new Environment();
-
-    e.define("clock", new class extends NativeLoxCallable {
-        public arity = () => 0;
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        public call = (interpreter: Interpreter, args: unknown[]) => Date.now() / 1000;
-    });
-
-    return e;
 }

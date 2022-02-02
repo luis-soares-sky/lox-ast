@@ -1,5 +1,6 @@
-import { LoxCallable, LoxFunction } from "./Callable";
-import { LoxInstance } from "./Instance";
+import { LoxCallable } from "./LoxCallable";
+import { LoxFunction } from "./LoxFunction";
+import { LoxInstance } from "./LoxInstance";
 import { Interpreter } from "./Interpreter";
 
 export class LoxClass extends LoxCallable {

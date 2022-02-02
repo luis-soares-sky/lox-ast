@@ -1,11 +1,12 @@
-import { LoxCallable, generateNativeEnvironment, LoxFunction } from "./Callable";
-import { LoxClass } from "./Class";
+import { LoxCallable, generateNativeEnvironment } from "./LoxCallable";
+import { LoxClass } from "./LoxClass";
+import { LoxFunction } from "./LoxFunction";
+import { LoxInstance } from "./LoxInstance";
 import { Environment } from "./Environment";
 import * as Expr from "../Ast/Expr";
 import * as Stmt from "../Ast/Stmt";
 import { Token, TokenType } from "../Lexer/Token";
 import { reportRuntimeError, ReturnError, RuntimeError } from "../Lox";
-import { LoxInstance } from "./Instance";
 
 export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
     public readonly globals = generateNativeEnvironment();
