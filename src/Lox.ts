@@ -43,6 +43,10 @@ export function reportError(line: number, column: number, where: string, message
     hadError = true;
 }
 
+export function returnTokenError(token: Token, message: string) {
+    reportError(token.line, token.column, "", message);
+}
+
 export function reportRuntimeError(error: RuntimeError) {
     console.error(`[${error.token.line}:${error.token.column}] Runtime error: ${error.message}`);
     hadRuntimeError = true;

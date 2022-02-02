@@ -1,7 +1,7 @@
 import * as Expr from "../Ast/Expr";
 import * as Stmt from "../Ast/Stmt";
 import { Token } from "../Lexer/Token";
-import { reportError } from "../Lox";
+import { returnTokenError } from "../Lox";
 import { Interpreter } from "./Interpreter";
 
 export enum ClassType { NONE, CLASS, SUBCLASS }
@@ -31,7 +31,7 @@ export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
 
         if (stmt.superclass != null) {
             if (stmt.name.lexeme == stmt.superclass.name.lexeme) {
-                reportError(stmt.superclass.name.line, stmt.superclass.name.column, "", "A class can't inherit from itself");
+                returnTokenError(stmt.superclass.name, "A class can't inherit from itself");
             }
 
             this.currentClass = ClassType.SUBCLASS;
@@ -84,12 +84,12 @@ export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
 
     public visitReturnStmt(stmt: Stmt.Return): void {
         if (this.currentFunction == FunctionType.NONE) {
-            reportError(stmt.keyword.line, stmt.keyword.column, "", "Can't return from top-level code");
+            returnTokenError(stmt.keyword, "Can't return from top-level code");
         }
 
         if (stmt.value != null) {
             if (this.currentFunction == FunctionType.INITIALIZER) {
-                reportError(stmt.keyword.line, stmt.keyword.column, "", "Can't return a value from an initializer");
+                returnTokenError(stmt.keyword, "Can't return a value from an initializer");
             }
 
             this.resolveExpression(stmt.value);
@@ -152,10 +152,10 @@ export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
 
     public visitSuperExpr(expr: Expr.Super): void {
         if (this.currentClass == ClassType.NONE) {
-            reportError(expr.keyword.line, expr.keyword.column, "", "Can't use 'super' outside of a class");
+            returnTokenError(expr.keyword, "Can't use 'super' outside of a class");
         }
         else if (this.currentClass != ClassType.SUBCLASS) {
-            reportError(expr.keyword.line, expr.keyword.column, "", "Can't use 'super' in a class with no superclass");
+            returnTokenError(expr.keyword, "Can't use 'super' in a class with no superclass");
         }
 
         this.resolveLocal(expr, expr.keyword);
@@ -163,7 +163,7 @@ export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
 
     public visitThisExpr(expr: Expr.This): void {
         if (this.currentClass == ClassType.NONE) {
-            reportError(expr.keyword.line, expr.keyword.column, "", "Can't use 'this' outside of a class");
+            returnTokenError(expr.keyword, "Can't use 'this' outside of a class");
             return;
         }
 
@@ -176,7 +176,7 @@ export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
 
     public visitVariableExpr(expr: Expr.Variable): void {
         if (this.scopes.length > 0 && this.scopes[this.scopes.length - 1].get(expr.name.lexeme) === false) {
-            reportError(expr.name.line, expr.name.column, "", "Can't read local variable in its own initializer");
+            returnTokenError(expr.name, "Can't read local variable in its own initializer");
         }
 
         this.resolveLocal(expr, expr.name);
@@ -195,7 +195,7 @@ export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
 
         const scope = this.scopes[this.scopes.length - 1];
         if (scope.has(name.lexeme)) {
-            reportError(name.line, name.column, "", `A variable '${name.lexeme}' already exists in this scope`);
+            returnTokenError(name, `A variable '${name.lexeme}' already exists in this scope`);
         }
         scope.set(name.lexeme, false);
     }
