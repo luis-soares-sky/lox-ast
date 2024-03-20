@@ -54,7 +54,7 @@ export function reportRuntimeError(error: RuntimeError) {
 
 export function run(source: string) {
     const scanner = new Scanner(source);
-    const tokens = scanner.scanTokens();
+    const tokens = scanner.scanTokens().filter((t) => t.type != TokenType.INLINE_COMMENT && t.type != TokenType.BLOCK_COMMENT);
     const parser = new Parser(tokens);
     const statements = parser.parse();
 
