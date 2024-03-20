@@ -171,7 +171,7 @@ export class Parser {
 
     private returnStatement(): Stmt.Stmt {
         const keyword = this.previous();
-        const value = !this.match(TokenType.SEMICOLON)
+        const value = !this.check(TokenType.SEMICOLON)
             ? this.expression()
             : undefined;
 
