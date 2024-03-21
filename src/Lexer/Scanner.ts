@@ -105,9 +105,12 @@ export class Scanner {
         while (this.isAlphaNumeric(this.peek())) this.advance();
 
         const text = this.source.substring(this.start, this.current);
-        let type = TokenKeywordMap[text];
-        if (type == null) type = TokenType.IDENTIFIER;
-        this.addToken(type);
+        if (Object.hasOwn(TokenKeywordMap, text)) {
+            this.addToken(TokenKeywordMap[text]);
+        }
+        else {
+            this.addToken(TokenType.IDENTIFIER);
+        }
     }
 
     private scanInlineComment() {
