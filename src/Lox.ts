@@ -3,7 +3,7 @@ import { resolve } from "path";
 import { createInterface, Interface } from "readline";
 
 import { Scanner } from "./Lexer/Scanner";
-import { Token } from "./Lexer/Token";
+import { Token, TokenType } from "./Lexer/Token";
 import { Parser } from "./Parser/Parser";
 import { Interpreter } from "./Interpreter/Interpreter";
 import { Resolver } from "./Interpreter/Resolver";
@@ -39,16 +39,19 @@ export class ReturnError extends Error {
 }
 
 export function reportError(line: number, column: number, where: string, message: string) {
-    console.error(`[${line}:${column}] Error${where}: ${message}`);
+    console.error(`[line ${line}] Error${where}: ${message}`);
     hadError = true;
 }
 
-export function returnTokenError(token: Token, message: string) {
-    reportError(token.line, token.column, "", message);
+export function reportTokenError(token: Token, message: string) {
+    const where = ` ${token.type == TokenType.EOF
+        ? "at end"
+        : `at '${token.lexeme}'`}`;
+    reportError(token.line, token.column, where, message);
 }
 
 export function reportRuntimeError(error: RuntimeError) {
-    console.error(`[${error.token.line}:${error.token.column}] Runtime error: ${error.message}`);
+    console.error(`${error.message}\n[line ${error.token.line}]`);
     hadRuntimeError = true;
 }
 

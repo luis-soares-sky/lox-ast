@@ -68,12 +68,12 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
                 return <number>left - <number>right;
             case TokenType.PLUS:
                 if (typeof left == "number" && typeof right == "number") return left + right;
-                if (typeof left == "string" || typeof right == "string") return this.stringify(left) + this.stringify(right);
-                throw new RuntimeError(expr.operator, "Operands must be numbers or strings");
+                if (typeof left == "string" && typeof right == "string") return left + right;
+                throw new RuntimeError(expr.operator, "Operands must be two numbers or two strings.");
             case TokenType.SLASH:
                 this.checkNumberOperands(expr.operator, left, right);
                 if (<number>right != 0) return <number>left / <number>right;
-                throw new RuntimeError(expr.operator, "Cannot divide by zero");
+                throw new RuntimeError(expr.operator, "Cannot divide by zero.");
             case TokenType.STAR:
                 this.checkNumberOperands(expr.operator, left, right);
                 return <number>left * <number>right;
@@ -88,12 +88,12 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
         const args = expr.args.map((arg) => this.evaluate(arg));
 
         if (!(callee instanceof LoxCallable)) {
-            throw new RuntimeError(expr.paren, "Can only call functions and classes");
+            throw new RuntimeError(expr.paren, "Can only call functions and classes.");
         }
 
         const fun: LoxCallable = <LoxCallable>callee;
         if (args.length != fun.arity()) {
-            throw new RuntimeError(expr.paren, `Expected ${fun.arity()} arguments but got ${args.length}`);
+            throw new RuntimeError(expr.paren, `Expected ${fun.arity()} arguments but got ${args.length}.`);
         }
 
         return fun.call(this, args);
@@ -105,7 +105,7 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
             return object.get(expr.name);
         }
 
-        throw new RuntimeError(expr.name, "Only instances have properties");
+        throw new RuntimeError(expr.name, "Only instances have properties.");
     }
 
     public visitGroupingExpr(expr: Expr.Grouping): unknown {
@@ -133,7 +133,7 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
         const object = this.evaluate(expr.object);
 
         if (!(object instanceof LoxInstance)) {
-            throw new RuntimeError(expr.name, "Only instances have fields");
+            throw new RuntimeError(expr.name, "Only instances have fields.");
         }
 
         const value = this.evaluate(expr.value);
@@ -150,7 +150,7 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
         const method = superclass.findMethod(expr.method.lexeme);
 
         if (method == null) {
-            throw new RuntimeError(expr.method, `Undefined property '${expr.method.lexeme}'`);
+            throw new RuntimeError(expr.method, `Undefined property '${expr.method.lexeme}'.`);
         }
 
         return method.bind(object);
@@ -188,7 +188,7 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
         if (stmt.superclass != null) {
             superclass = this.evaluate(stmt.superclass);
             if (!(superclass instanceof LoxClass)) {
-                throw new RuntimeError(stmt.superclass.name, "Superclass must be a class");
+                throw new RuntimeError(stmt.superclass.name, "Superclass must be a class.");
             }
         }
 
@@ -304,12 +304,12 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
 
     private checkNumberOperand(operator: Token, operand: unknown) {
         if (typeof operand == "number") return;
-        throw new RuntimeError(operator, "Operand must be a number");
+        throw new RuntimeError(operator, "Operand must be a number.");
     }
 
     private checkNumberOperands(operator: Token, left: unknown, right: unknown) {
         if (typeof left == "number" && typeof right == "number") return;
-        throw new RuntimeError(operator, "Operands must be numbers");
+        throw new RuntimeError(operator, "Operands must be numbers.");
     }
 
     private isEqual(a: unknown, b: unknown): boolean {

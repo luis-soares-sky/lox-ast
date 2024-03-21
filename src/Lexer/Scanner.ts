@@ -66,7 +66,7 @@ export class Scanner {
             default:
                 if (this.isDigit(c)) this.scanNumber();
                 else if (this.isAlpha(c)) this.scanIdentifier();
-                else reportError(this.line, this.column, "", `Unexpected character: ${c}`);
+                else reportError(this.line, this.column, "", `Unexpected character.`);
                 break;
         }
     }
@@ -78,7 +78,7 @@ export class Scanner {
         }
 
         if (this.isAtEnd()) {
-            reportError(this.line, this.column, "", "Unterminated string");
+            reportError(this.line, this.column, "", "Unterminated string.");
             return;
         }
 

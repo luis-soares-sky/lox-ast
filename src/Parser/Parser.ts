@@ -1,7 +1,7 @@
 import * as Expr from "../Ast/Expr";
 import * as Stmt from "../Ast/Stmt";
 import { Token, TokenType } from "../Lexer/Token";
-import { ParseError, reportError } from "../Lox";
+import { ParseError, reportTokenError } from "../Lox";
 
 export class Parser {
     private tokens: Token[] = [];
@@ -63,8 +63,7 @@ export class Parser {
     }
 
     private error(token: Token, message: string) {
-        const where = ` ${token.type == TokenType.EOF ? "at end" : `at ${token.lexeme}`}`;
-        reportError(token.line, token.column, where, message);
+        reportTokenError(token, message);
         return new ParseError(token, message);
     }
 
@@ -104,7 +103,7 @@ export class Parser {
     }
 
     private forStatement(): Stmt.Stmt {
-        this.consume(TokenType.LEFT_PAREN, "Expected '(' after 'for'");
+        this.consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
 
         const initializer =
             this.match(TokenType.SEMICOLON)
@@ -116,12 +115,12 @@ export class Parser {
         let condition = !this.check(TokenType.SEMICOLON)
             ? this.expression()
             : undefined;
-        this.consume(TokenType.SEMICOLON, "Expected ';' after loop condition");
+        this.consume(TokenType.SEMICOLON, "Expect ';' after loop condition.");
 
         const increment = !this.check(TokenType.RIGHT_PAREN)
             ? this.expression()
             : undefined;
-        this.consume(TokenType.RIGHT_PAREN, "Expected ')' after loop clauses");
+        this.consume(TokenType.RIGHT_PAREN, "Expect ')' after loop clauses.");
 
         let body = this.statement();
 
@@ -143,9 +142,9 @@ export class Parser {
     }
 
     private ifStatement(): Stmt.Stmt {
-        this.consume(TokenType.LEFT_PAREN, "Expected '(' after 'if'");
+        this.consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.");
         const condition = this.expression();
-        this.consume(TokenType.RIGHT_PAREN, "Expected ')' after condition");
+        this.consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.");
 
         const thenBranch = this.statement();
         const elseBranch = this.match(TokenType.ELSE)
@@ -157,7 +156,7 @@ export class Parser {
 
     private printStatement(): Stmt.Stmt {
         const value = this.expression();
-        this.consume(TokenType.SEMICOLON, "Expected ';' after value");
+        this.consume(TokenType.SEMICOLON, "Expect ';' after value.");
         return new Stmt.Print(value);
     }
 
@@ -167,14 +166,14 @@ export class Parser {
             ? this.expression()
             : undefined;
 
-        this.consume(TokenType.SEMICOLON, "Expected ';' after value");
+        this.consume(TokenType.SEMICOLON, "Expect ';' after return value.");
         return new Stmt.Return(keyword, value);
     }
 
     private whileStatement(): Stmt.Stmt {
-        this.consume(TokenType.LEFT_PAREN, "Expected '(' after 'while'");
+        this.consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.");
         const condition = this.expression();
-        this.consume(TokenType.RIGHT_PAREN, "Expected ')' after condition");
+        this.consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.");
 
         const body = this.statement();
 
@@ -183,7 +182,7 @@ export class Parser {
 
     private expressionStatement(): Stmt.Stmt {
         const expr = this.expression();
-        this.consume(TokenType.SEMICOLON, "Expected ';' after value");
+        this.consume(TokenType.SEMICOLON, "Expect ';' after expression.");
         return new Stmt.Expression(expr);
     }
 
@@ -195,7 +194,7 @@ export class Parser {
             if (decl) statements.push(decl);
         }
 
-        this.consume(TokenType.RIGHT_BRACE, "Expected '}' after block");
+        this.consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");
         return statements;
     }
 
@@ -216,55 +215,55 @@ export class Parser {
     }
 
     private classDeclaration(): Stmt.Stmt {
-        const name = this.consume(TokenType.IDENTIFIER, "Expected a class name");
+        const name = this.consume(TokenType.IDENTIFIER, "Expect a class name.");
 
         let superclass = undefined;
         if (this.match(TokenType.LESS)) {
-            this.consume(TokenType.IDENTIFIER, "Expected superclass name");
+            this.consume(TokenType.IDENTIFIER, "Expect superclass name.");
             superclass = new Expr.Variable(this.previous());
         }
 
-        this.consume(TokenType.LEFT_BRACE, "Expected '{' before class body");
+        this.consume(TokenType.LEFT_BRACE, "Expect '{' before class body.");
 
         const methods: Stmt.Fun[] = [];
         while (!this.check(TokenType.RIGHT_BRACE) && !this.isAtEnd()) {
             methods.push(this.functionDeclaration("method"));
         }
 
-        this.consume(TokenType.RIGHT_BRACE, "Expected '}' after class body");
+        this.consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.");
 
         return new Stmt.Class(name, superclass, methods);
     }
 
     private functionDeclaration(kind: string): Stmt.Fun {
-        const name: Token = this.consume(TokenType.IDENTIFIER, `Expected ${kind} name`);
-        this.consume(TokenType.LEFT_PAREN, `Expected '(' after ${kind} name`);
+        const name: Token = this.consume(TokenType.IDENTIFIER, `Expect ${kind} name.`);
+        this.consume(TokenType.LEFT_PAREN, `Expect '(' after ${kind} name.`);
 
         const params: Token[] = [];
         if (!this.check(TokenType.RIGHT_PAREN)) {
             do {
                 if (params.length >= 255) {
-                    this.error(this.peek(), "Can't have more than 255 parameters");
+                    this.error(this.peek(), "Can't have more than 255 parameters.");
                 }
 
-                params.push(this.consume(TokenType.IDENTIFIER, "Expected parameter name"));
+                params.push(this.consume(TokenType.IDENTIFIER, "Expect parameter name."));
             } while (this.match(TokenType.COMMA));
         }
-        this.consume(TokenType.RIGHT_PAREN, `Expected ')' after ${kind} parameters`);
+        this.consume(TokenType.RIGHT_PAREN, `Expect ')' after parameters.`);
 
-        this.consume(TokenType.LEFT_BRACE, `Expected '{' before ${kind} body`);
+        this.consume(TokenType.LEFT_BRACE, `Expect '{' before ${kind} body.`);
         const body = this.blockStatement();
 
         return new Stmt.Fun(name, params, body);
     }
 
     private varDeclaration(): Stmt.Stmt {
-        const name: Token = this.consume(TokenType.IDENTIFIER, "Expected variable name");
+        const name: Token = this.consume(TokenType.IDENTIFIER, "Expect variable name.");
         const initializer = this.match(TokenType.EQUAL)
             ? this.expression()
             : undefined;
 
-        this.consume(TokenType.SEMICOLON, "Expected ';' after variable declaration");
+        this.consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
         return new Stmt.Var(name, initializer);
     }
 
@@ -288,7 +287,7 @@ export class Parser {
                 return new Expr.Set(expr.object, expr.name, value);
             }
 
-            this.error(equals, "Invalid assignment target");
+            this.error(equals, "Invalid assignment target.");
         }
 
         return expr;
@@ -385,7 +384,7 @@ export class Parser {
                 expr = this.finishCall(expr);
             }
             else if (this.match(TokenType.DOT)) {
-                const name = this.consume(TokenType.IDENTIFIER, "Expected property name after '.'");
+                const name = this.consume(TokenType.IDENTIFIER, "Expect property name after '.'.");
                 expr = new Expr.Get(expr, name);
             }
             else break;
@@ -399,13 +398,13 @@ export class Parser {
         if (!this.check(TokenType.RIGHT_PAREN)) {
             do {
                 if (args.length >= 255) {
-                    this.error(this.peek(), "Can't have more than 255 arguments");
+                    this.error(this.peek(), "Can't have more than 255 arguments.");
                 }
                 args.push(this.expression());
             } while (this.match(TokenType.COMMA));
         }
 
-        const paren = this.consume(TokenType.RIGHT_PAREN, "Expected ')' after function arguments");
+        const paren = this.consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.");
 
         return new Expr.Call(callee, paren, args);
     }
@@ -421,8 +420,8 @@ export class Parser {
 
         if (this.match(TokenType.SUPER)) {
             const keyword = this.previous();
-            this.consume(TokenType.DOT, "Expected '.' after 'super'");
-            const method = this.consume(TokenType.IDENTIFIER, "Expected superclass method name");
+            this.consume(TokenType.DOT, "Expect '.' after 'super'.");
+            const method = this.consume(TokenType.IDENTIFIER, "Expect superclass method name.");
             return new Expr.Super(keyword, method);
         }
 
@@ -434,10 +433,10 @@ export class Parser {
 
         if (this.match(TokenType.LEFT_PAREN)) {
             const expr = this.expression();
-            this.consume(TokenType.RIGHT_PAREN, "Expected ')' after expression");
+            this.consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.");
             return new Expr.Grouping(expr);
         }
 
-        throw this.error(this.peek(), "Expected expression");
+        throw this.error(this.peek(), "Expect expression.");
     }
 }
