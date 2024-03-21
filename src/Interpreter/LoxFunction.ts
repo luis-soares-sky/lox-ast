@@ -21,7 +21,7 @@ export class LoxFunction extends LoxCallable {
     public bind(instance: LoxInstance): LoxFunction {
         const environment = new Environment(this.closure);
         environment.define("this", instance);
-        return new LoxFunction(this.declaration, environment, false);
+        return new LoxFunction(this.declaration, environment, this.isInitializer);
     }
 
     public call(interpreter: Interpreter, args: unknown[]) {
