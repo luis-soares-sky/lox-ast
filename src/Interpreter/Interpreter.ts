@@ -325,6 +325,13 @@ export class Interpreter implements Expr.Visitor<unknown>, Stmt.Visitor<void> {
     private stringify(value: unknown): string {
         if (value == null || value == undefined) return "nil";
         if (typeof value == "string") return value;
+        if (typeof value == "number" && this.isZeroNegative(value)) return "-0";
         return String(value);
+    }
+
+    private isZeroNegative(zero: number): boolean {
+        const isZero = zero === 0;
+        const isNegative = 1 / zero === -Infinity;
+        return isNegative && isZero;
     }
 }
