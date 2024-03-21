@@ -18,16 +18,8 @@ export class Parser {
                 continue; // Ignore comments.
             }
 
-            try {
-                statements.push(this.declaration());
-            }
-            catch (e) {
-                if (e instanceof ParseError) {
-                    this.synchronize();
-                    continue;
-                }
-                throw e;
-            }
+            const decl = this.declaration();
+            if (decl) statements.push(decl);
         }
         return statements;
     }
@@ -199,19 +191,28 @@ export class Parser {
         const statements: Stmt.Stmt[] = [];
 
         while (!this.check(TokenType.RIGHT_BRACE) && !this.isAtEnd()) {
-            statements.push(this.declaration());
+            const decl = this.declaration();
+            if (decl) statements.push(decl);
         }
 
         this.consume(TokenType.RIGHT_BRACE, "Expected '}' after block");
         return statements;
     }
 
-    private declaration(): Stmt.Stmt {
-        if (this.match(TokenType.CLASS)) return this.classDeclaration();
-        if (this.match(TokenType.FUN)) return this.functionDeclaration("function");
-        if (this.match(TokenType.VAR)) return this.varDeclaration();
-
-        return this.statement();
+    private declaration(): Stmt.Stmt | null {
+        try {
+            if (this.match(TokenType.CLASS)) return this.classDeclaration();
+            if (this.match(TokenType.FUN)) return this.functionDeclaration("function");
+            if (this.match(TokenType.VAR)) return this.varDeclaration();
+            return this.statement();
+        }
+        catch (e) {
+            if (e instanceof ParseError) {
+                this.synchronize();
+                return null;
+            }
+            throw e;
+        }
     }
 
     private classDeclaration(): Stmt.Stmt {
