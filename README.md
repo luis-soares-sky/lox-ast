@@ -2,7 +2,7 @@
 
 Typescript implementation of a tree-walk interpreter for the Lox programming language.
 
-What is lox? https://craftinginterpreters.com/the-lox-language.html
+What is lox? https://craftinginterpreters.com/the-lox-language.html  
 What is a tree-walk interpreter? https://craftinginterpreters.com/a-tree-walk-interpreter.html
 
 ## Usage
