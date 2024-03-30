@@ -1,4 +1,4 @@
-# talox
+# tslox
 
 Typescript implementation of a tree-walk interpreter for the Lox programming language.
 
