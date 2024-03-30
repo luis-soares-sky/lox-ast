@@ -1,14 +1,9 @@
-# tslox
+# tslox-ast
 
-Typescript implementation of the `lox` programming language.
+Typescript implementation of a tree-walk interpreter for the Lox programming language.
 
 What is lox? https://craftinginterpreters.com/the-lox-language.html
-
-## Motivation
-
-I want to learn and know more about compilers so I can gain skills that will help with my full-time job, and this project is a good first step.
-
-Warning: this is very much a work-in-progress, and so far the only thing that works is the lexing/scanning part of the compiler. Everything else will be added in time.
+What is a tree-walk interpreter? https://craftinginterpreters.com/a-tree-walk-interpreter.html
 
 ## Usage
 
@@ -42,3 +37,17 @@ npm link
 tslox
 tslox myFile.lox
 ```
+
+## Standards Compliance
+
+This interpreter currently passes all of the dart tests present in [craftinginterpreters](https://github.com/munificent/craftinginterpreters) repo. If you want to check for yourself, follow the steps below:
+
+1. Clone the [munificent/craftinginterpreters](https://github.com/munificent/craftinginterpreters) repo.
+2. Install its dependencies (dart) and follow its instructions in order to run the tests.
+3. Once you can run tests, just use the command below:
+
+```
+dart tool/bin/test.dart jlox --interpreter tslox-ast
+```
+
+![Test results, "All 239 tests passed (556 expectations)."](image.png)
