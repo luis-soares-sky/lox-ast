@@ -1,4 +1,4 @@
-# tslox-ast
+# talox
 
 Typescript implementation of a tree-walk interpreter for the Lox programming language.
 
@@ -47,7 +47,7 @@ This interpreter currently passes all of the dart tests present in [craftinginte
 3. Once you can run tests, just use the command below:
 
 ```
-dart tool/bin/test.dart jlox --interpreter tslox-ast
+dart tool/bin/test.dart jlox --interpreter tslox
 ```
 
 ![Test results, "All 239 tests passed (556 expectations)."](image.png)

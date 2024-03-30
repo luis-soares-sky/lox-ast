@@ -1,5 +1,5 @@
 {
-    "name": "tslox-ast",
+    "name": "lox-ast",
     "version": "1.0.0",
     "description": "Typescript tree-walk interpreter for Lox",
     "main": "./build/index.js",
@@ -11,7 +11,7 @@
         "start": "ts-node ./src/index.ts"
     },
     "bin": {
-        "tslox-ast": "./build/index.js"
+        "tslox": "./build/index.js"
     },
     "devDependencies": {
         "@types/node": "^20.12.2",
